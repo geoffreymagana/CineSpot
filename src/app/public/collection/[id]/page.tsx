@@ -1,20 +1,22 @@
 
 import { notFound } from 'next/navigation';
-import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { getTitleDetails } from '@/lib/services/tmdb';
+import { db } from '@/lib/firebase';
 import type { Collection, Movie } from '@/lib/types';
-import { PublicHeader } from '@/app/public/PublicHeader';
+import { getTitleDetails } from '@/lib/services/tmdb';
 import { MovieGrid } from '@/components/movies/MovieGrid';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Film } from 'lucide-react';
+import { PublicHeader } from '../../PublicHeader';
 
 async function getCollection(
-  userId: string,
+  uid: string,
   collectionId: string
 ): Promise<{ collection: Collection; movies: Movie[] } | null> {
+  if (!uid || !collectionId) return null;
+
   try {
-    const collectionRef = doc(db, 'users', userId, 'collections', collectionId);
+    const collectionRef = doc(db, 'users', uid, 'collections', collectionId);
     const collectionSnap = await getDoc(collectionRef);
 
     if (!collectionSnap.exists()) {
@@ -27,12 +29,12 @@ async function getCollection(
     } as Collection;
 
     const moviePromises = collectionData.movieIds.map(id =>
-      getTitleDetails(id).catch(e => {
+      getTitleDetails(id, undefined).catch(e => {
         console.error(`Failed to fetch details for movie ID ${id}`, e);
         return null;
       })
     );
-    
+
     const movies = (await Promise.all(moviePromises)).filter(
       (m): m is Movie => m !== null
     );
@@ -55,16 +57,21 @@ export default async function PublicCollectionPage({
   const userId = searchParams.user;
 
   if (!userId) {
-    return notFound();
+    notFound();
   }
 
   const data = await getCollection(userId, collectionId);
 
   if (!data) {
-    return notFound();
+    notFound();
   }
 
   const { collection, movies } = data;
+
+  const moviesWithPublicLinks = movies.map(movie => ({
+    ...movie,
+    publicLink: `/public/title/${movie.id}`,
+  }));
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -75,21 +82,23 @@ export default async function PublicCollectionPage({
             <h1 className="font-headline text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
               {collection.name}
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              {collection.description}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              A shared collection from Cine-Spot
+            {collection.description && (
+              <p className="mt-4 text-lg text-muted-foreground">
+                {collection.description}
+              </p>
+            )}
+            <p className="mt-4 text-sm text-muted-foreground">
+              A publicly shared collection. To create your own, visit Cine-Spot.
             </p>
           </div>
 
           {movies.length > 0 ? (
-            <MovieGrid movies={movies.map(m => ({ ...m, publicLink: `/public/title/${m.id}`}))} usePublicLinks={true} />
+            <MovieGrid movies={moviesWithPublicLinks} usePublicLinks={true} />
           ) : (
             <EmptyState
               icon={<Film className="h-16 w-16 text-muted-foreground" />}
               title="This Collection is Empty"
-              description="There are no titles in this shared collection yet."
+              description="There are no titles in this shared collection."
             />
           )}
         </div>
