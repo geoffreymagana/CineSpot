@@ -30,9 +30,10 @@ export function ShareCollectionPopover({
   useEffect(() => {
     if (typeof window !== 'undefined' && user) {
       const url = new URL(
-        `/public/collection/${user.uid}/${collectionId}`,
+        `/public/collection/${collectionId}`,
         window.location.origin
       );
+      url.searchParams.set('user', user.uid);
       setShareUrl(url.href);
     }
   }, [collectionId, user]);

@@ -1,95 +1,99 @@
 
+import { notFound } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collectionGroup, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { getTitleDetails } from '@/lib/services/tmdb';
 import type { Collection, Movie } from '@/lib/types';
+import { PublicHeader } from '@/app/public/PublicHeader';
 import { MovieGrid } from '@/components/movies/MovieGrid';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Film } from 'lucide-react';
-import Link from 'next/link';
 
-async function getCollectionData(collectionId: string): Promise<{ collection: Omit<Collection, 'id'>, movies: Movie[] } | null> {
-    const collectionsQuery = query(
-        collectionGroup(db, 'collections'),
-        where('__name__', '==', collectionId)
+async function getCollection(
+  userId: string,
+  collectionId: string
+): Promise<{ collection: Collection; movies: Movie[] } | null> {
+  try {
+    const collectionRef = doc(db, 'users', userId, 'collections', collectionId);
+    const collectionSnap = await getDoc(collectionRef);
+
+    if (!collectionSnap.exists()) {
+      return null;
+    }
+
+    const collectionData = {
+      id: collectionSnap.id,
+      ...collectionSnap.data(),
+    } as Collection;
+
+    const moviePromises = collectionData.movieIds.map(id =>
+      getTitleDetails(id).catch(e => {
+        console.error(`Failed to fetch details for movie ID ${id}`, e);
+        return null;
+      })
+    );
+    
+    const movies = (await Promise.all(moviePromises)).filter(
+      (m): m is Movie => m !== null
     );
 
-    try {
-        const querySnapshot = await getDocs(collectionsQuery);
-        if (querySnapshot.empty) {
-            console.warn(`No collection found with ID: ${collectionId}`);
-            return null;
-        }
-
-        const collectionDoc = querySnapshot.docs[0];
-        const collectionData = collectionDoc.data() as Omit<Collection, 'id'>;
-
-        if (!collectionData.movieIds || collectionData.movieIds.length === 0) {
-            return { collection: collectionData, movies: [] };
-        }
-
-        const moviePromises = collectionData.movieIds.map(id => getTitleDetails(id));
-        const movies = (await Promise.all(moviePromises)).filter((m): m is Movie => m !== null);
-
-        return { collection: collectionData, movies };
-
-    } catch (error) {
-        console.error("Error fetching shared collection:", error);
-        return null;
-    }
+    return { collection: collectionData, movies };
+  } catch (error) {
+    console.error('Error fetching public collection:', error);
+    return null;
+  }
 }
 
+export default async function PublicCollectionPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { user?: string };
+}) {
+  const collectionId = params.id;
+  const userId = searchParams.user;
 
-export default async function PublicCollectionPage({ params }: { params: { id: string } }) {
-  const data = await getCollectionData(params.id);
+  if (!userId) {
+    return notFound();
+  }
+
+  const data = await getCollection(userId, collectionId);
 
   if (!data) {
-    return (
-      <div className="container px-4 py-10 md:px-6 lg:px-8">
-        <EmptyState
-          icon={<Film className="h-16 w-16 text-muted-foreground" />}
-          title="Collection Not Found"
-          description="We couldn't find the collection you're looking for. The link may be invalid or the collection may have been deleted."
-        >
-          <Button asChild size="lg">
-            <Link href="/">Back to Home</Link>
-          </Button>
-        </EmptyState>
-      </div>
-    );
+    return notFound();
   }
 
   const { collection, movies } = data;
 
-  const moviesWithPublicLinks = movies.map(movie => ({
-    ...movie,
-    publicLink: `/public/title/${movie.id}?media_type=${movie.media_type || 'movie'}`
-  }));
-
-
   return (
-    <div className="container px-4 py-6 md:px-6 lg:px-8">
-      <div className="mb-8 mt-4">
-        <h1 className="font-headline text-4xl font-extrabold tracking-tight text-white">
-          {collection.name}
-        </h1>
-        {collection.description && (
-          <p className="text-muted-foreground mt-2 max-w-2xl">
-            {collection.description}
-          </p>
-        )}
-      </div>
+    <div className="flex min-h-screen flex-col">
+      <PublicHeader />
+      <main className="flex-1">
+        <div className="container px-4 py-10 md:px-6 lg:px-8">
+          <div className="mb-8 max-w-4xl">
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+              {collection.name}
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
+              {collection.description}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              A shared collection from Cine-Spot
+            </p>
+          </div>
 
-      {movies.length > 0 ? (
-        <MovieGrid movies={moviesWithPublicLinks} usePublicLinks={true} />
-      ) : (
-          <EmptyState
-          icon={<Film className="h-16 w-16 text-muted-foreground" />}
-          title="This Collection is Empty"
-          description="There are no titles in this collection yet."
-        />
-      )}
+          {movies.length > 0 ? (
+            <MovieGrid movies={movies.map(m => ({ ...m, publicLink: `/public/title/${m.id}`}))} usePublicLinks={true} />
+          ) : (
+            <EmptyState
+              icon={<Film className="h-16 w-16 text-muted-foreground" />}
+              title="This Collection is Empty"
+              description="There are no titles in this shared collection yet."
+            />
+          )}
+        </div>
+      </main>
     </div>
   );
 }
-
