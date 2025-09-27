@@ -7,6 +7,6 @@
  * It uses the Genkit Next.js plugin to handle requests.
  */
 
-import { createNextApiHandler } from '@genkit-ai/next';
+import { ai } from '@/ai/genkit';
 
-export const { GET, POST } = createNextApiHandler();
+export const { GET, POST } = ai.getApiHandler();
