@@ -30,6 +30,7 @@ import { useState } from 'react';
 import { FeedbackDialog } from '../FeedbackDialog';
 import { useRecommendations } from '@/hooks/use-recommendations';
 import { processRecommendationFeedback } from '@/ai/flows/recommendation-feedback-flow';
+import { useAuth } from '@/hooks/use-auth';
 
 interface PublicMovieHeaderProps {
   movie: Movie;
@@ -48,6 +49,7 @@ const DetailItem = ({ icon: Icon, label, value, children }: { icon: React.Elemen
 
 export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const { addMovie, isMovieAdded } = useMovies();
   const { removeRecommendation } = useRecommendations();
   const { toast } = useToast();
@@ -79,11 +81,20 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
   }
   
   const handleFeedback = async (liked: boolean, reason?: string) => {
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to provide feedback.'
+        });
+        return;
+    }
     setFeedbackGiven(true);
     removeRecommendation(movie.id);
 
     try {
         const result = await processRecommendationFeedback({
+            userId: user.uid,
             title: movie.title,
             liked,
             reason

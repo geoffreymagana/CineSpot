@@ -10,8 +10,12 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useAuth } from '@/hooks/use-auth';
 
 const RecommendationFeedbackInputSchema = z.object({
+  userId: z.string().describe("The ID of the user giving feedback."),
   title: z.string().describe('The title of the movie or show.'),
   liked: z.boolean().describe('Whether the user liked the recommendation.'),
   reason: z
@@ -64,9 +68,19 @@ const recommendationFeedbackFlow = ai.defineFlow(
     outputSchema: RecommendationFeedbackOutputSchema,
   },
   async input => {
-    // In a real application, you would store this feedback in a database.
-    // This data would then be used to fine-tune future recommendation requests.
-    console.log('Received feedback:', input);
+    // Store feedback in Firestore
+    try {
+      const feedbackCollectionRef = collection(db, 'users', input.userId, 'feedback');
+      await addDoc(feedbackCollectionRef, {
+        title: input.title,
+        liked: input.liked,
+        reason: input.reason || null,
+        timestamp: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Failed to save feedback to Firestore:", error);
+      // We can still proceed to give the user a confirmation, but log the error.
+    }
 
     const { output } = await recommendationFeedbackPrompt(input);
     return output!;

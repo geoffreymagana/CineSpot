@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> 14fdfa4 (fix(genkit): correct nextPlugin import for Next.js integration)
 'use server';
 /**
  * @fileoverview A catch-all route handler for Genkit flow APIs.
