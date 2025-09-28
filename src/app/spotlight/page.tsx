@@ -15,6 +15,9 @@ import { getTitleDetails } from '@/lib/services/tmdb';
 import { useMovies } from '@/lib/hooks/use-movies';
 import { useRecommendations } from '@/hooks/use-recommendations';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
+import { useUserMovieData } from '@/hooks/use-user-movie-data';
+import { useAuth } from '@/hooks/use-auth';
+import { processRecommendationFeedback } from '@/ai/flows/recommendation-feedback-flow';
 
 
 function SpotlightSection({
@@ -51,7 +54,7 @@ function SpotlightSection({
   if (movies.length === 0) {
     return null;
   }
-  
+
   const moviesWithPublicLinks = movies.map(movie => ({
     ...movie,
     publicLink: `/public/title/${movie.id}?media_type=${movie.media_type || 'movie'}`
@@ -89,6 +92,8 @@ function CarouselTitle({rawTitle}: {rawTitle: string}){
 export default function SpotlightPage() {
   useAuthGuard();
   const { addMovie, isMovieAdded } = useMovies();
+  const { updateUserData } = useUserMovieData();
+  const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -104,18 +109,19 @@ export default function SpotlightPage() {
 
   const handleCollect = async (movie: Movie) => {
     if (isMovieAdded(movie.id)) {
-      router.push(`/title/${movie.id}`);
+      // Already in library: nothing to do in-place
+      toast({ title: 'Already in library', description: `${movie.title} is already in your library.` });
       return;
     }
     try {
         const fullDetails = await getTitleDetails(movie.id, movie.media_type || 'movie');
         await addMovie(fullDetails);
+        // Update UI and cache, but do not navigate away — keep user in Spotlight as requested
         removeRecommendation(movie.id);
         toast({
           title: "Added to Library!",
           description: `"${movie.title}" is now in your library.`
         });
-        router.push(`/title/${movie.id}`);
     } catch(e) {
         console.error("Error collecting title:", e);
         toast({
@@ -126,75 +132,107 @@ export default function SpotlightPage() {
     }
   };
 
-  const handleFeedback = (movie: Movie, liked: boolean) => {
+  const handleFeedback = async (movie: Movie, liked: boolean, reason?: string) => {
+    // Persist feedback to user data so it influences heuristics later (optimistic)
+    try {
+      await updateUserData(movie.id, { lastFeedback: { liked, reason, timestamp: new Date().toISOString() } } as any);
+    } catch (err) {
+      console.error('Failed to persist local feedback', err);
+    }
+
+    try {
+      await processRecommendationFeedback({ userId: user?.uid || (window as any).__user?.uid || 'unknown', title: movie.title, liked, reason });
+    } catch (e) {
+      console.error('Failed to send feedback to AI flow', e);
+    }
+
+    // Show immediate acknowledgement
     toast({
-      title: "Feedback received!",
-      description: `Thanks for helping us improve recommendations.`
+      title: 'Feedback received!',
+      description: `Thanks — your feedback helps improve recommendations.`
     });
-    // Remove the movie from the recommendations
-    removeRecommendation(movie.id);
+
+    // Do not automatically remove the item for thumbs-up; thumbs-down may stay visible so the user
+    // can reverse the decision. If you want to hide immediately, uncomment the next line.
+    // if (!liked) removeRecommendation(movie.id);
   };
-  
+
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
-        
+
         {isLoadingRecommendations && (!recommendations || recommendations.topPicks.length === 0) ? (
           <Skeleton className="w-full h-[60vh] md:h-[80vh]" />
         ) : recommendations && recommendations.topPicks.length > 0 ? (
-          <RecommendationCarousel 
-            movies={recommendations.topPicks.map(m => ({ ...m, publicLink: `/public/title/${m.id}?media_type=${m.media_type || 'movie'}` }))} 
-            onCollect={handleCollect}
-            onFeedback={handleFeedback}
-          />
-        ) : (
-           <div className="container px-4 py-6 md:px-6 lg:px-8">
-             <div className="flex flex-col items-center text-center my-8">
-              <Sparkles className="h-12 w-12 mb-4 text-primary" />
-              <h1 className="font-headline text-4xl font-extrabold tracking-tight text-white">
-                Spotlight
-              </h1>
-              <p className="max-w-2xl mt-2 text-muted-foreground">
-                Your personalized movie and show recommendations. Add more titles to your library to unlock new ones!
-              </p>
-            </div>
-           </div>
-        )}
-        
-        <div className="container px-4 py-6 md:px-6 lg:px-8">
-          <div className="mt-8">
-            {recommendations?.carousels.map((carousel) => (
-                <SpotlightSection
-                    key={carousel.title}
-                    title={<CarouselTitle rawTitle={carousel.title} />}
-                    icon={<Sparkles className="h-6 w-6 text-primary" />}
-                    movies={carousel.recommendations}
-                    isLoading={isLoadingRecommendations}
-                />
-            ))}
+          <>
+            <RecommendationCarousel
+              movies={recommendations.topPicks.map(m => ({ ...m, publicLink: `/public/title/${m.id}?media_type=${m.media_type || 'movie'}` }))}
+              onCollect={handleCollect}
+              onFeedback={handleFeedback}
+            />
+            <div className="container px-4 py-6 md:px-6 lg:px-8">
+              <div className="mt-8">
+                {recommendations?.carousels.map((carousel) => (
+                    <SpotlightSection
+                        key={carousel.title}
+                        title={<CarouselTitle rawTitle={carousel.title} />}
+                        icon={<Sparkles className="h-6 w-6 text-primary" />}
+                        movies={carousel.recommendations}
+                        isLoading={isLoadingRecommendations}
+                    />
+                ))}
 
-             <SpotlightSection
-              title="Trending Now"
-              icon={<TrendingUp className="h-6 w-6 text-primary" />}
-              movies={trendingMovies}
-              isLoading={isLoadingRecommendations}
-            />
-            <SpotlightSection
-              title="Top Rated"
-              icon={<Star className="h-6 w-6 text-amber-400 fill-amber-400" />}
-              movies={topRatedMovies}
-              isLoading={isLoadingRecommendations}
-            />
-             <SpotlightSection
-              title="Upcoming"
-              icon={<Calendar className="h-6 w-6 text-primary" />}
-              movies={upcomingMovies}
-              isLoading={isLoadingRecommendations}
-            />
+                {/* Only render a separate Trending Now section if the carousels didn't already include it */}
+                {!recommendations?.carousels?.some(c => c.title.toLowerCase() === 'trending now') && (
+                 <SpotlightSection
+                  title="Trending Now"
+                  icon={<TrendingUp className="h-6 w-6 text-primary" />}
+                  movies={trendingMovies}
+                  isLoading={isLoadingRecommendations}
+                />
+                )}
+                <SpotlightSection
+                  title="Top Rated"
+                  icon={<Star className="h-6 w-6 text-amber-400 fill-amber-400" />}
+                  movies={topRatedMovies}
+                  isLoading={isLoadingRecommendations}
+                />
+                 <SpotlightSection
+                  title="Upcoming"
+                  icon={<Calendar className="h-6 w-6 text-primary" />}
+                  movies={upcomingMovies}
+                  isLoading={isLoadingRecommendations}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="container px-4 py-6 md:px-6 lg:px-8">
+            <div className="mt-8">
+              <SpotlightSection
+                title="Trending Now"
+                icon={<TrendingUp className="h-6 w-6 text-primary" />}
+                movies={trendingMovies}
+                isLoading={isLoadingRecommendations}
+              />
+              <SpotlightSection
+                title="Top Rated"
+                icon={<Star className="h-6 w-6 text-amber-400 fill-amber-400" />}
+                movies={topRatedMovies}
+                isLoading={isLoadingRecommendations}
+              />
+              <SpotlightSection
+                title="Upcoming"
+                icon={<Calendar className="h-6 w-6 text-primary" />}
+                movies={upcomingMovies}
+                isLoading={isLoadingRecommendations}
+              />
+            </div>
           </div>
-        </div>
+        )
+        }
       </main>
     </div>
   );

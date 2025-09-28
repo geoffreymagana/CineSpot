@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useMovies } from '@/lib/hooks/use-movies';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { generatePersonalizedPrompt } from '@/ai/flows/personalized-canvas';
+import { getPosterUrl } from '@/lib/utils';
 
 export function PersonalizationCanvas() {
   const { movies } = useMovies();
@@ -28,38 +28,26 @@ export function PersonalizationCanvas() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
+    // Replace AI generation with a Dicebear-based preview seed derived from top movies.
     setIsGenerating(true);
     setPersonalizedPrompt('');
     try {
-      const likedMovies = movies.slice(0, 5); // Use top 5 movies as a proxy
+      const likedMovies = movies.slice(0, 5);
       if (likedMovies.length === 0) {
         toast({
           variant: 'destructive',
           title: 'Not Enough Data',
-          description:
-            'Add some movies to your library to generate a personalized prompt.',
+          description: 'Add some movies to your library to generate a personalized preview.',
         });
+        setIsGenerating(false);
         return;
       }
 
-      const result = await generatePersonalizedPrompt({
-        movieTitles: likedMovies.map(m => m.title),
-        basePrompt,
-      });
-
-      setPersonalizedPrompt(result.personalizedPrompt);
-      toast({
-        title: 'Prompt Generated!',
-        description: 'Your personalized image prompt is ready.',
-      });
-    } catch (error) {
-      console.error('Failed to generate personalized prompt', error);
-      toast({
-        variant: 'destructive',
-        title: 'Generation Failed',
-        description:
-          'Could not generate a personalized prompt. Please try again.',
-      });
+      const seed = likedMovies.map(m => m.title).join('-').slice(0, 60);
+  // Use PNG variant to avoid SVG/CSP/dangerouslyAllowSVG issues
+  const dicebearUrl = `https://api.dicebear.com/8.x/thumbs/png?seed=${encodeURIComponent(seed)}&scale=90`;
+      setPersonalizedPrompt(dicebearUrl);
+      toast({ title: 'Preview Ready', description: 'A fallback avatar/cover has been generated.' });
     } finally {
       setIsGenerating(false);
     }
@@ -94,14 +82,12 @@ export function PersonalizationCanvas() {
           </Button>
           {(isGenerating || personalizedPrompt) && (
             <div className="space-y-2 pt-4">
-              <Label>Personalized Prompt Result</Label>
-              <Textarea
-                readOnly
-                value={
-                  isGenerating ? 'Generating...' : personalizedPrompt
-                }
-                className="min-h-[100px] resize-none"
-              />
+              <Label>Personalized Preview</Label>
+              {isGenerating ? (
+                <div>Generating preview...</div>
+              ) : (
+                <img src={personalizedPrompt} alt="Personalized preview" className="w-full rounded-md" />
+              )}
             </div>
           )}
         </CardContent>

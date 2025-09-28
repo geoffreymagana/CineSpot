@@ -7,12 +7,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const getPosterUrl = (path: string | null) => {
-  return path ? `https://image.tmdb.org/t/p/w500${path}` : 'https://picsum.photos/seed/1/500/750';
+export const getPosterUrl = (path: string | null, seed?: string) => {
+  if (path) return `https://image.tmdb.org/t/p/w500${path}`;
+  const s = seed || 'cinespot-default';
+  // Request PNG from Dicebear to avoid SVG/CSP issues when dangerouslyAllowSVG is disabled
+  return `https://api.dicebear.com/8.x/thumbs/png?seed=${encodeURIComponent(s)}&scale=90`;
 }
 
-export const getBackdropUrl = (path: string | null) => {
-  return path ? `https://image.tmdb.org/t/p/w1280${path}` : 'https://picsum.photos/seed/backdrop/1280/720';
+export const getBackdropUrl = (path: string | null, seed?: string) => {
+  if (path) return `https://image.tmdb.org/t/p/w1280${path}`;
+  const s = seed || 'cinespot-backdrop';
+  // Request PNG from Dicebear to avoid SVG/CSP issues when dangerouslyAllowSVG is disabled
+  return `https://api.dicebear.com/8.x/thumbs/png?seed=${encodeURIComponent(s)}&scale=140`;
 };
 
 // A centralized function to normalize both movies and TV shows from TMDB into our Movie type

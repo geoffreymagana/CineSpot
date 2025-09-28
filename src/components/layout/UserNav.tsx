@@ -34,7 +34,8 @@ export function UserNav() {
     }
   }
 
-  const avatarUrl = user.photoURL || `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${user.uid}`;
+  // Use PNG variant to avoid SVG being blocked when dangerouslyAllowSVG is disabled
+  const avatarUrl = user.photoURL || `https://api.dicebear.com/8.x/bottts-neutral/png?seed=${user.uid}`;
   const avatarFallback = user.displayName?.substring(0, 2).toUpperCase() || user.email?.substring(0,2).toUpperCase() || 'CS';
 
 

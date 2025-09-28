@@ -21,7 +21,7 @@ import { getBackdropUrl } from '@/lib/utils';
 interface RecommendationCarouselProps {
   movies: (Movie & { publicLink: string })[];
   onCollect: (movie: Movie) => void;
-  onFeedback: (movie: Movie, liked: boolean) => void;
+  onFeedback: (movie: Movie, liked: boolean, reason?: string) => void;
 }
 
 export function RecommendationCarousel({
@@ -95,7 +95,7 @@ export function RecommendationCarousel({
                         </Button>
                         )}
                         <div className="flex gap-2">
-                            <Button size="lg" variant="outline" className="bg-transparent border-white/20 hover:bg-white/10" onClick={() => onFeedback(movie, true)}>
+              <Button size="lg" variant="outline" className="bg-transparent border-white/20 hover:bg-white/10" onClick={() => onFeedback(movie, true)}>
                                 <ThumbsUp />
                             </Button>
                             <Button size="lg" variant="outline" className="bg-transparent border-white/20 hover:bg-white/10" onClick={() => onFeedback(movie, false)}>

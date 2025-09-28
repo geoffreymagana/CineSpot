@@ -182,7 +182,12 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+    // We intentionally run this effect once (on mount) so the same setState
+    // reference is registered in the global listeners list. Depending on `state`
+    // here caused the effect to re-run whenever the local state changed which
+    // led to duplicate listener registration and an update loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return {
     ...state,

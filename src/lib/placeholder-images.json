@@ -1,0 +1,10 @@
+{
+  "placeholderImages": [
+    {
+      "id": "dicebear-1",
+      "description": "Dicebear seeded placeholder",
+      "imageUrl": "https://api.dicebear.com/8.x/identicon/png?seed=placeholder-1",
+      "imageHint": "seeded-dicebear"
+    }
+  ]
+}

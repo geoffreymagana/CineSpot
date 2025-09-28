@@ -18,11 +18,16 @@ export default async function PublicTitlePage({
     notFound();
   }
 
-  const movie = await getTitleDetails(movieId, searchParams.media_type);
-
-  if (!movie) {
+  let movie = null;
+  try {
+    movie = await getTitleDetails(movieId, searchParams.media_type);
+  } catch (e) {
+    console.error('Failed to fetch title details', e);
+    // If TMDB fetch fails (network or API error), show notFound to avoid crashing the renderer
     notFound();
   }
+
+  if (!movie) notFound();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

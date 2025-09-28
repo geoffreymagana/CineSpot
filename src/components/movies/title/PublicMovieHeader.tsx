@@ -26,11 +26,14 @@ import { useToast } from '@/hooks/use-toast';
 import { TrailerPlayer } from '../TrailerPlayer';
 import { getPosterUrl, getBackdropUrl } from '@/lib/utils';
 import { getTitleDetails } from '@/lib/services/tmdb';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FeedbackDialog } from '../FeedbackDialog';
 import { useRecommendations } from '@/hooks/use-recommendations';
 import { processRecommendationFeedback } from '@/ai/flows/recommendation-feedback-flow';
 import { useAuth } from '@/hooks/use-auth';
+import { getWatchProviders } from '@/lib/services/tmdb';
+import { WhereToWatch } from './WhereToWatch';
+import { useUserMovieData } from '@/hooks/use-user-movie-data';
 
 interface PublicMovieHeaderProps {
   movie: Movie;
@@ -53,10 +56,25 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
   const { addMovie, isMovieAdded } = useMovies();
   const { removeRecommendation } = useRecommendations();
   const { toast } = useToast();
+  const { updateUserData } = useUserMovieData();
   
   const movie = initialMovie;
   const [feedbackGiven, setFeedbackGiven] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const [providers, setProviders] = useState<any | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const p = await getWatchProviders(movie.id, movie.media_type || 'movie');
+        if (mounted) setProviders(p);
+      } catch (e) {
+        console.warn('Could not load watch providers', e);
+      }
+    })();
+    return () => { mounted = false };
+  }, [movie.id, movie.media_type]);
 
   const director = movie.credits?.crew.find(c => c.job === 'Director');
   const writer = movie.credits?.crew.find(c => c.job === 'Writer' || c.job === 'Screenplay');
@@ -90,29 +108,34 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
         return;
     }
     setFeedbackGiven(true);
-    removeRecommendation(movie.id);
+  // Persist feedback to user data so we can use it as a heuristic signal
+  try {
+    await updateUserData(movie.id, { lastFeedback: { liked, reason, timestamp: new Date().toISOString() } } as any);
+  } catch (e) {
+    console.warn('Could not persist feedback to user data', e);
+  }
 
-    try {
-        const result = await processRecommendationFeedback({
-            userId: user.uid,
-            title: movie.title,
-            liked,
-            reason
-        });
+  try {
+    const result = await processRecommendationFeedback({
+      userId: user.uid,
+      title: movie.title,
+      liked,
+      reason
+    });
 
-        toast({
-            title: "Feedback Received",
-            description: result.confirmationMessage,
-        });
+    toast({
+      title: "Feedback Received",
+      description: result.confirmationMessage,
+    });
 
-    } catch (e) {
-        console.error("Failed to process feedback", e);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not submit your feedback.",
-        });
-    }
+  } catch (e) {
+    console.error("Failed to process feedback", e);
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: "Could not submit your feedback.",
+    });
+  }
   }
 
   return (
@@ -203,6 +226,7 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
 
 
                   <p className="mt-6 max-w-3xl text-base">{movie.overview}</p>
+                  <WhereToWatch providers={providers} />
                 </div>
               </div>
           </div>
@@ -224,3 +248,7 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
     </>
   );
 }
+
+// Fetch providers on the client after mount
+// (keeps server rendering fast and avoids coupling to user's locale)
+PublicMovieHeader.displayName = 'PublicMovieHeader';

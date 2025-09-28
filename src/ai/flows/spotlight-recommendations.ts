@@ -13,6 +13,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
+import { getTrendingMovies } from '@/lib/services/tmdb';
 
 // Define the input schema for the flow
 const SpotlightRecommendationsInputSchema = z.object({
@@ -86,8 +87,30 @@ const spotlightRecommendationsFlow = ai.defineFlow(
     outputSchema: SpotlightRecommendationsOutputSchema,
   },
   async input => {
-    const {output} = await spotlightRecommendationsPrompt(input);
-    return output!;
+    try {
+      const { output } = await spotlightRecommendationsPrompt(input);
+      return output!;
+    } catch (err) {
+      // If the AI model/service is unavailable or returns an error (e.g. unsupported model),
+      // fall back to a deterministic TMDB-based recommendation set so the Spotlight features
+      // remain available. The app expects just the titles here — the client will fetch
+      // full TMDB details via the existing search flow.
+      console.error('AI spotlightRecommendations failed, falling back to TMDB trending titles:', err);
+
+      const trending = await getTrendingMovies();
+      const topPicks = trending.slice(0, 5).map(t => t.title);
+      const carousels = [
+        {
+          title: 'Trending Now',
+          recommendations: trending.slice(0, 5).map(t => t.title),
+        },
+      ];
+
+      return {
+        topPicks,
+        carousels,
+      };
+    }
   }
 );
-    
+

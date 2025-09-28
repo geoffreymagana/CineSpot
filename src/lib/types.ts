@@ -109,6 +109,31 @@ export interface Collection {
 export type UserMovieData = {
     personalRating?: number;
     watchedEpisodes?: number[];
+    // Optional metadata used by the recommender
+    genres?: { id: number; name: string }[];
+    rewatchCount?: number;
+    // Last feedback stored for this movie (thumbs up / down)
+    lastFeedback?: {
+      liked: boolean;
+      reason?: string;
+      timestamp?: string;
+    };
+}
+
+export type ProviderInfo = {
+  provider_id: number;
+  provider_name: string;
+  logo_path?: string | null;
+  display_priority?: number;
+}
+
+export type WatchProviders = {
+  country: string;
+  link?: string;
+  flatrate?: ProviderInfo[];
+  rent?: ProviderInfo[];
+  buy?: ProviderInfo[];
+  ads?: ProviderInfo[];
 }
 
 export type UserLibrary = {

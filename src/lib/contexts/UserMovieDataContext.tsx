@@ -8,7 +8,7 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 
 
-const USER_DATA_DOC_ID = 'metadata'; 
+const USER_DATA_DOC_ID = 'metadata';
 const USER_DATA_COLLECTION = 'user_data';
 
 interface UserMovieDataContextType {
@@ -36,7 +36,7 @@ export function UserMovieDataProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     const docRef = doc(db, 'users', user.uid, USER_DATA_COLLECTION, USER_DATA_DOC_ID);
 
-    const unsubscribe = onSnapshot(docRef, 
+    const unsubscribe = onSnapshot(docRef,
       (docSnap) => {
         if (docSnap.exists()) {
           const firestoreData = docSnap.data() as UserLibrary;
@@ -63,7 +63,7 @@ export function UserMovieDataProvider({ children }: { children: ReactNode }) {
 
   const updateUserData = async (movieId: number, data: Partial<UserMovieData>) => {
     if (!user) throw new Error("User not authenticated.");
-    
+
     // Optimistic update
     const updatedLibrary = {
       ...userLibrary,
@@ -77,7 +77,34 @@ export function UserMovieDataProvider({ children }: { children: ReactNode }) {
     // Sync with Firestore
     try {
       const docRef = doc(db, 'users', user.uid, USER_DATA_COLLECTION, USER_DATA_DOC_ID);
-      await setDoc(docRef, { [movieId]: data }, { merge: true });
+      // Firestore rejects undefined values. Remove them from the payload so nested
+      // fields like `lastFeedback.reason` that may be `undefined` don't cause a hard error.
+      const removeUndefined = (input: any): any => {
+        if (input === undefined) return undefined;
+        if (input === null) return null;
+        if (Array.isArray(input)) {
+          const arr = input.map(removeUndefined).filter((v) => v !== undefined);
+          return arr;
+        }
+        if (typeof input === 'object') {
+          const out: any = {};
+          for (const [k, v] of Object.entries(input)) {
+            const cleaned = removeUndefined(v);
+            if (cleaned !== undefined) out[k] = cleaned;
+          }
+          // If object became empty, return undefined so caller can skip writing it
+          return Object.keys(out).length ? out : undefined;
+        }
+        return input;
+      };
+
+      const cleaned = removeUndefined(data);
+      if (cleaned !== undefined && Object.keys(cleaned).length > 0) {
+        await setDoc(docRef, { [movieId]: cleaned }, { merge: true });
+      } else {
+        // Nothing meaningful to write; skip setDoc to avoid Firestore errors
+        console.debug('Skipping Firestore write for', movieId, '— cleaned payload empty or undefined');
+      }
     } catch (error) {
       console.error("Failed to update user data in Firestore", error);
       toast({

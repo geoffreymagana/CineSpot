@@ -82,7 +82,12 @@ const personalizedCanvasFlow = ai.defineFlow(
     outputSchema: PersonalizedPromptOutputSchema,
   },
   async input => {
-    const { output } = await personalizedCanvasPrompt(input);
-    return output!;
+    try {
+      const { output } = await personalizedCanvasPrompt(input);
+      return output!;
+    } catch (err) {
+      console.error('personalizedCanvas flow failed:', err);
+      return { personalizedPrompt: input.basePrompt };
+    }
   }
 );

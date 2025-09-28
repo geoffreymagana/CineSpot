@@ -169,6 +169,51 @@ To test AI flows locally, you can run the Genkit development server:
 pnpm genkit:dev
 ```
 
+## 🧠 ML fallbacks (local TF-IDF & expand API)
+
+To ensure the Spotlight recommendations stay useful even when external generative models are unavailable, Cine-Spot implements a small, deterministic local fallback using TF-IDF and a nearest-neighbour expansion API.
+
+- `src/lib/embeddings/tfidf.ts` — a tiny TF-IDF vectorizer and cosine similarity helper. It's designed for short-text similarity (movie titles, short phrases) and is intentionally lightweight so it can run in-browser or in a Node server without heavy dependencies.
+- `POST /api/local/expand` (`src/app/api/local/expand/route.ts`) — a tiny API that accepts a `corpus` (array of strings) and a `query` string and returns the top-K most similar corpus items. This is used as an intermediate fallback when Genkit and the OpenAI fallback do not produce valid suggestions.
+
+How it works
+
+1. The recommendation pipeline first asks Genkit (Google Gemini) for title suggestions.
+2. If Genkit fails or returns empty results, the pipeline calls our OpenAI fallback at `/api/openai/recommendations`.
+3. If both generative fallbacks fail, the pipeline uses the local TF-IDF expansion:
+  - It builds a `corpus` from available TMDB lists such as Trending, Top Rated, and Upcoming titles.
+  - It selects a `seed` query from the user's recently watched/liked titles.
+  - It POSTs `{ corpus, query, topK }` to `/api/local/expand` and receives similar titles.
+  - The pipeline then resolves those titles using TMDB search, filters out items already in the user's library, scores and ranks them, and inserts them into the top picks and carousel candidates.
+
+Why TF-IDF
+
+- Extremely small and fast, suitable as a safety net.
+- No external dependencies or API keys required.
+- Works best for short text (titles) and when you have a reasonable corpus of candidate titles.
+
+Extending this
+
+If you need stronger semantic matching consider:
+
+- Sentence-transformer style embeddings (create offline/precomputed vectors for the movie catalog and do nearest-neighbor search with Faiss or an in-memory HNSW index).
+- Lightweight vector databases (e.g., Milvus, Weaviate) or hosted services if you need scale.
+
+Running tests
+
+We added small tests to validate the TF-IDF helper and the local expand API. Install dev deps and run:
+
+```bash
+pnpm install
+pnpm test
+```
+
+Notes for ML engineers
+
+- The TF-IDF implementation in `src/lib/embeddings/tfidf.ts` is intentionally simple. It's a good starting point for debugging and offline experiments, but for production-quality semantic search use embeddings + ANN index.
+- The local expand API accepts untrusted input; if you choose to expose it publicly, add rate-limiting and input validation.
+
+
 This will launch a local UI where you can invoke and inspect the inputs and outputs of your AI flows.
 
 ## 🚧 Known Issues & Future Work

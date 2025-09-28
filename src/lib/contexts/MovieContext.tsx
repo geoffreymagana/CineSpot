@@ -3,7 +3,7 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import type { Movie } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -41,9 +41,28 @@ export function MovieProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onSnapshot(moviesRef, 
         (querySnapshot) => {
             let moviesData = querySnapshot.docs.map(doc => ({ id: Number(doc.id), ...doc.data() } as Movie));
-            moviesData.sort((a,b) => new Date(b.release_date).getTime() - new Date(a.release_date).getTime());
-            
-            setMovies(moviesData);
+
+            // Sort: prefer not-completed items first (most recently added at top),
+            // then completed items at the bottom. Use `addedAt` if available, fallback to release_date.
+            const withAddedAt = moviesData.map(m => ({
+              ...m,
+              _addedAt: (() => {
+                const a = (m as any).addedAt;
+                if (!a) return m.release_date ? new Date(m.release_date).getTime() : 0;
+                try {
+                  return typeof a.toMillis === 'function' ? a.toMillis() : new Date(a).getTime();
+                } catch (e) {
+                  return new Date(String(a)).getTime();
+                }
+              })(),
+            }));
+
+            const notCompleted = withAddedAt.filter(m => m.watchStatus !== 'Completed').sort((a,b) => (b._addedAt || 0) - (a._addedAt || 0));
+            const completed = withAddedAt.filter(m => m.watchStatus === 'Completed').sort((a,b) => (b._addedAt || 0) - (a._addedAt || 0));
+
+            const sorted = [...notCompleted, ...completed].map(({_addedAt, ...rest}) => rest as Movie);
+
+            setMovies(sorted);
             setIsLoading(false);
         }, 
         (error) => {
@@ -72,7 +91,7 @@ export function MovieProvider({ children }: { children: ReactNode }) {
     };
     
     try {
-      await setDoc(doc(db, 'users', user.uid, MOVIES_COLLECTION, String(movie.id)), movieWithDefaults);
+      await setDoc(doc(db, 'users', user.uid, MOVIES_COLLECTION, String(movie.id)), { ...movieWithDefaults, addedAt: serverTimestamp() as any });
        toast({
         title: "Added to Library",
         description: `"${movie.title}" has been added to your library.`

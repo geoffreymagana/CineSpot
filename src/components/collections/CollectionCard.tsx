@@ -32,8 +32,9 @@ export function CollectionCard({ collection }: CollectionCardProps) {
   const firstMovieId = collection.movieIds[0];
   const firstMovie = movies.find(m => m.id === firstMovieId);
 
+  // Use PNG variant of Dicebear to avoid SVG being blocked when dangerouslyAllowSVG is disabled
   const imageUrl = collection.coverImageUrl || 
-                   (firstMovie ? getBackdropUrl(firstMovie.backdrop_path) : `https://api.dicebear.com/8.x/shapes/svg?seed=${collection.id}`);
+                   (firstMovie ? getBackdropUrl(firstMovie.backdrop_path) : `https://api.dicebear.com/8.x/shapes/png?seed=${collection.id}`);
   
   const imageHint = firstMovie?.title ? firstMovie.title.split(" ").slice(0,2).join(" ") : "movie collection";
 

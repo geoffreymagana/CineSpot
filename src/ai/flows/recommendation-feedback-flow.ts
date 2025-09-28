@@ -82,7 +82,15 @@ const recommendationFeedbackFlow = ai.defineFlow(
       // We can still proceed to give the user a confirmation, but log the error.
     }
 
-    const { output } = await recommendationFeedbackPrompt(input);
-    return output!;
+    try {
+      const { output } = await recommendationFeedbackPrompt(input);
+      if (output && output.confirmationMessage) return output;
+      // Fallback deterministic message if output is empty
+      return { confirmationMessage: `Thanks — we've recorded your feedback for "${input.title}".` };
+    } catch (err: any) {
+      // If Genkit complains about missing model or other errors, don't surface to UI.
+      console.debug('recommendationFeedback flow AI call failed, falling back to deterministic message:', err?.message || err);
+      return { confirmationMessage: `Thanks — we've recorded your feedback for "${input.title}".` };
+    }
   }
 );

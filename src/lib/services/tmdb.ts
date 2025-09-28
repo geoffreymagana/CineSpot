@@ -14,7 +14,14 @@ const apiFetch = async (path: string, params: Record<string, string> = {}) => {
     for (const [key, value] of Object.entries(params)) {
         url.searchParams.append(key, value);
     }
-    const response = await fetch(url.toString());
+    let response: Response;
+    try {
+        response = await fetch(url.toString());
+    } catch (err: any) {
+        // Network-level failure (DNS, connectivity, TLS)
+        throw new Error(`TMDB fetch failed for ${url.toString()}: ${err?.message || String(err)}`);
+    }
+
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ status_message: response.statusText }));
         throw new Error(`TMDB API error: ${errorData.status_message || 'Unknown error'}`);
@@ -63,11 +70,33 @@ export const getTitleDetails = async (titleId: number, mediaType?: 'movie' | 'tv
     return normalizeTitle(data);
 }
 
+export const getWatchProviders = async (titleId: number, mediaType: 'movie' | 'tv', country = 'US') => {
+    try {
+        const data = await apiFetch(`/${mediaType}/${titleId}/watch/providers`);
+        const providers = data.results && data.results[country] ? data.results[country] : null;
+        return providers as any || null;
+    } catch (e) {
+        console.warn('Failed to fetch watch providers for', titleId, e);
+        return null;
+    }
+}
+
 export const getTrendingMovies = async (): Promise<Movie[]> => {
     const data = await apiFetch('/trending/all/week');
     return data.results
         .filter((m: any) => (m.media_type === 'movie' || m.media_type === 'tv') && m.poster_path)
         .map(normalizeTitle);
+}
+
+export const getRecommendationsForTitle = async (titleId: number, mediaType: 'movie' | 'tv') => {
+    try {
+        const path = `/${mediaType}/${titleId}/recommendations`;
+        const data = await apiFetch(path);
+        return (data.results || []).filter((m: any) => (m.media_type === 'movie' || m.media_type === 'tv')).map(normalizeTitle);
+    } catch (e) {
+        console.warn('Failed to fetch recommendations for title', titleId, e);
+        return [];
+    }
 }
 
 export const getTopRatedMovies = async (): Promise<Movie[]> => {
