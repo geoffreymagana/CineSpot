@@ -178,9 +178,9 @@ To ensure the Spotlight recommendations stay useful even when external generativ
 
 How it works
 
-1. The recommendation pipeline first asks Genkit (Google Gemini) for title suggestions.
-2. If Genkit fails or returns empty results, the pipeline calls our OpenAI fallback at `/api/openai/recommendations`.
-3. If both generative fallbacks fail, the pipeline uses the local TF-IDF expansion:
+1. The recommendation pipeline first attempts a deterministic, privacy-conscious LLM path (currently OpenAI fallback) for title suggestions.
+2. Genkit (Google Gemini) was previously part of the pipeline but may be disabled or unavailable in some deployments; the application no longer relies on Genkit at runtime by default. If Genkit is enabled in your environment, it can be re-introduced via configuration.
+3. If the generative fallbacks (OpenAI and/or Genkit when enabled) fail or return empty results, the pipeline uses the local TF-IDF expansion:
   - It builds a `corpus` from available TMDB lists such as Trending, Top Rated, and Upcoming titles.
   - It selects a `seed` query from the user's recently watched/liked titles.
   - It POSTs `{ corpus, query, topK }` to `/api/local/expand` and receives similar titles.
@@ -215,6 +215,37 @@ Notes for ML engineers
 
 
 This will launch a local UI where you can invoke and inspect the inputs and outputs of your AI flows.
+
+Recent changes and improvements
+-------------------------------
+
+- Pipeline simplification: The recommendation flow prioritizes the OpenAI fallback endpoint and uses the local TF-IDF expansion as a deterministic safety net. Genkit integration was disabled by default to avoid runtime issues with model availability; the codebase retains the Genkit flows for optional use but the runtime pipeline will not call them unless explicitly re-enabled.
+
+- Robust Firestore writes: `updateUserData` now sanitizes payloads to remove `undefined` values before calling `setDoc`. This prevents runtime Firebase errors when callers include optional fields like `lastFeedback.reason` that may be undefined.
+
+- Thumb/feedback persistence: Thumbs-up (positive) and thumbs-down (negative) feedback are persisted to the user's data and also stored in a separate `feedback` collection for auditing and analytics. Thumbs-up does not automatically remove items from carousels; thumbs-down is recorded as a strong negative signal and reduces the chance of re-recommendation.
+
+- Deterministic image fallbacks: All Dicebear image fallbacks now request PNG variants instead of SVG to avoid CSP/CSP-driven browser blocking when `dangerouslyAllowSVG` is disabled (this quiets the console warnings and prevents blocked image loads in strict environments).
+
+- Special carousels & refill behavior: The Spotlight page includes deterministic special carousels ("Because you liked ...", "Because you added ...", "Finished Watching ...") and carousel refill/deduplication behavior so Spotlight features remain useful even if generative models do not return results.
+
+Known issues and notes
+----------------------
+
+- Genkit model availability: There have been runtime failures when Genkit was invoked without an available model or with mismatched model identifiers (e.g., 404s or "Must supply a `model` to `generate()` calls"). To avoid user-impacting failures, the pipeline has been simplified to prefer the OpenAI fallback and the TF-IDF expansion. If you want to re-enable Genkit, ensure you have a supported model identifier and compatible Genkit configuration in `src/ai/genkit.ts`.
+
+- Opentelemetry / dependency warnings: You may see a serverExternalPackages warning about `require-in-the-middle` resolving to different versions between the app and an instrumentation subdependency. This is typically a benign resolution mismatch but can be silenced by aligning versions across the top-level `package.json` and the subdependency or by pinning peer dependencies.
+
+- Placeholder image / icon 404s: Some PWA icons may be missing in `public/icons/` (for example `icon-192x192.png`). If you see 404s in the console for icons, add the missing sizes to `public/icons/` or update `public/manifest.json` to match the available images.
+
+If you're maintaining or deploying Cine-Spot
+----------------------------------------
+
+- Re-enable Genkit (optional): If you want to re-enable Genkit in the pipeline, update `src/lib/contexts/RecommendationContext.tsx` to call `spotlightRecommendations` again and verify your Genkit/GenAI credentials and model IDs are valid. Test with `pnpm genkit:dev` and the Genkit UI.
+
+- Testing & CI: Run the TF-IDF unit tests (`pnpm test`) and the `pnpm run typecheck` to ensure code health before deploying.
+
+These updates make the recommendation pipeline more reliable and friendly for local development and small-scale deployments while retaining the ability to integrate richer generative models if you choose to do so later.
 
 ## 🚧 Known Issues & Future Work
 
