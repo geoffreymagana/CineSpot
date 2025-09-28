@@ -58,6 +58,7 @@ const spotlightRecommendationsPrompt = ai.definePrompt({
   name: 'spotlightRecommendationsPrompt',
   input: {schema: SpotlightRecommendationsInputSchema},
   output: {schema: SpotlightRecommendationsOutputSchema},
+  model: 'googleai/gemini-1.5-flash-latest',
   prompt: `You are a movie and TV show recommendation expert for a platform called Cine-Spot. Your goal is to provide personalized and engaging recommendations. Only return the titles of the movies or shows.
 
   Here is what I've been up to:
