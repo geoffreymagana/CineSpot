@@ -248,6 +248,27 @@ If you're maintaining or deploying Cine-Spot
 
 - Testing & CI: Run the TF-IDF unit tests (`pnpm test`) and the `pnpm run typecheck` to ensure code health before deploying.
 
+### Re-sync stored titles with TMDB (migration)
+
+If you have existing movie documents in Firestore that may have diverged from the canonical TMDB title text, you can run a safe server-side re-sync which updates the `title` and other canonical fields on each saved movie using TMDB's current data.
+
+1. Create a service account JSON for Firebase and set `GOOGLE_APPLICATION_CREDENTIALS` to point to it (or run on a hosting platform that provides credentials).
+2. Set a secret for the migration endpoint: add `RESYNC_ADMIN_SECRET=some-long-secret` to your environment.
+3. Start the app (or deploy) and POST to the endpoint:
+
+```bash
+# Example (local):
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-resync-secret: ${RESYNC_ADMIN_SECRET}" \
+  -d '{ "userId": "USER_UID_HERE" }' \
+  http://localhost:9002/api/admin/resync-titles
+```
+
+The endpoint will iterate the user's `users/{uid}/movies` collection, call TMDB for each ID using the same normalization logic used elsewhere in the app, and update the Firestore documents. The response contains a per-movie status array.
+
+Security note: This endpoint requires that `RESYNC_ADMIN_SECRET` match the value on the server and requires Firestore admin credentials. Do not expose it publicly without additional protections (IP allowlist, Cloud IAM, or admin-only auth).
+
 These updates make the recommendation pipeline more reliable and friendly for local development and small-scale deployments while retaining the ability to integrate richer generative models if you choose to do so later.
 
 ## 🚧 Known Issues & Future Work

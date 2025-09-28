@@ -73,7 +73,6 @@ export default async function PublicCollectionPage({
 
         {movies.length > 0 ? (
           <>
-            <PublicCollectionActions movies={movies} />
             <MovieGrid movies={moviesWithPublicLinks} usePublicLinks={true} />
           </>
         ) : (

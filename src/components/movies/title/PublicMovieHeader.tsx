@@ -79,64 +79,8 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
   const director = movie.credits?.crew.find(c => c.job === 'Director');
   const writer = movie.credits?.crew.find(c => c.job === 'Writer' || c.job === 'Screenplay');
 
-  const handleAddToLibrary = async () => {
-    try {
-        const fullDetails = await getTitleDetails(movie.id, movie.media_type || 'movie');
-        await addMovie(fullDetails);
-        toast({
-          title: "Added to Library!",
-          description: `"${movie.title}" is now in your library.`
-        });
-        router.push(`/title/${movie.id}`);
-    } catch(e) {
-        console.error("Failed to add title to library", e);
-        toast({
-            variant: 'destructive',
-            title: "Error",
-            description: "Could not add this title to your library."
-        });
-    }
-  }
-  
-  const handleFeedback = async (liked: boolean, reason?: string) => {
-    if (!user) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication Error',
-            description: 'You must be logged in to provide feedback.'
-        });
-        return;
-    }
-    setFeedbackGiven(true);
-  // Persist feedback to user data so we can use it as a heuristic signal
-  try {
-    await updateUserData(movie.id, { lastFeedback: { liked, reason, timestamp: new Date().toISOString() } } as any);
-  } catch (e) {
-    console.warn('Could not persist feedback to user data', e);
-  }
-
-  try {
-    const result = await processRecommendationFeedback({
-      userId: user.uid,
-      title: movie.title,
-      liked,
-      reason
-    });
-
-    toast({
-      title: "Feedback Received",
-      description: result.confirmationMessage,
-    });
-
-  } catch (e) {
-    console.error("Failed to process feedback", e);
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: "Could not submit your feedback.",
-    });
-  }
-  }
+  // Public pages should not expose actions that modify user libraries or accept feedback.
+  // The add-to-library and feedback handlers were removed intentionally.
 
   return (
     <>
@@ -192,34 +136,7 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
                           <span className="hidden md:inline">Play Trailer</span>
                       </Button>
                     </TrailerPlayer>
-                     {isMovieAdded(movie.id) ? (
-                        <Button size="lg" variant="secondary" onClick={() => router.push(`/title/${movie.id}`)}>
-                          <CheckCircle className="mr-2" />
-                          In Your Library
-                        </Button>
-                     ) : (
-                        <Button size="lg" onClick={handleAddToLibrary}>
-                            <PlusCircle className="mr-2" />
-                            Add to Library
-                        </Button>
-                     )}
-                     <div className="flex gap-2">
-                        <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20" onClick={() => handleFeedback(true)} disabled={feedbackGiven}>
-                            <ThumbsUp />
-                        </Button>
-                        <FeedbackDialog
-                            open={isFeedbackDialogOpen}
-                            onOpenChange={setIsFeedbackDialogOpen}
-                            onSubmit={(reason) => handleFeedback(false, reason)}
-                            title={movie.title}
-                        >
-                            <Button size="lg" variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20" disabled={feedbackGiven}>
-                                <ThumbsDown />
-                            </Button>
-                        </FeedbackDialog>
-                     </div>
                   </div>
-                  {feedbackGiven && <p className="text-sm mt-2 text-muted-foreground">Thank you for your feedback!</p>}
 
 
                   <p className="mt-6 max-w-3xl text-base">{movie.overview}</p>
