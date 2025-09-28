@@ -40,7 +40,7 @@ Follow these steps to get the project running on your local machine.
 ### 2. Clone the Repository
 
 ```bash
-git clone https://github.com/your-repo/cinespot.git
+git clone https://github.com/geoffreymagana/CineSpot.git
 cd cinespot
 ```
 
