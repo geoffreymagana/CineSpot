@@ -104,6 +104,8 @@ export interface Collection {
   movieIds: number[];
   description?: string;
   coverImageUrl?: string;
+  pinned?: boolean;
+  pinnedIndex?: number;
 }
 
 export type UserMovieData = {

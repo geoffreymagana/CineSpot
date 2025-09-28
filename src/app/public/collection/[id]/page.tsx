@@ -6,6 +6,7 @@ import type { Collection, Movie } from '@/lib/types';
 import { getTitleDetails } from '@/lib/services/tmdb';
 import { notFound } from 'next/navigation';
 import { MovieGrid } from '@/components/movies/MovieGrid';
+import PublicCollectionActions from '../PublicCollectionActions';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Film } from 'lucide-react';
 import Link from 'next/link';
@@ -71,7 +72,10 @@ export default async function PublicCollectionPage({
         </div>
 
         {movies.length > 0 ? (
-          <MovieGrid movies={moviesWithPublicLinks} usePublicLinks={true} />
+          <>
+            <PublicCollectionActions movies={movies} />
+            <MovieGrid movies={moviesWithPublicLinks} usePublicLinks={true} />
+          </>
         ) : (
           <EmptyState
             icon={<Film className="h-16 w-16 text-muted-foreground" />}

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import type { Collection } from '@/lib/types';
 import { Film, MoreVertical, Trash2 } from 'lucide-react';
+import { Pin } from 'lucide-react';
 import { useMovies } from '@/lib/hooks/use-movies';
 import { Button } from '../ui/button';
 import {
@@ -44,6 +45,17 @@ export function CollectionCard({ collection }: CollectionCardProps) {
     deleteCollection(collection.id);
   }
 
+  const { togglePin } = useCollections();
+  const handleTogglePin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await togglePin(collection.id);
+    } catch (err) {
+      console.error('Failed to toggle pin', err);
+    }
+  }
+
   return (
     <Link href={`/collections/${collection.id}`} className="group relative">
       <Card className="overflow-hidden border-border bg-card transition-transform duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-primary/20 h-full flex flex-col">
@@ -76,8 +88,11 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             </CardFooter>
         </div>
       </Card>
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <AlertDialog>
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+          <Button variant={collection.pinned ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={handleTogglePin}>
+            <Pin className="h-4 w-4" />
+            <span className="sr-only">{collection.pinned ? 'Unpin collection' : 'Pin collection'}</span>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="h-8 w-8" onClick={e => {e.preventDefault(); e.stopPropagation()}}>
@@ -86,27 +101,12 @@ export function CollectionCard({ collection }: CollectionCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => e.preventDefault()}>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Collection
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
+              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(e as any); }}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Collection
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the "{collection.name}" collection.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </Link>
   );

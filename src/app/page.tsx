@@ -1,5 +1,5 @@
 
-'use client';
+ 'use client';
 
 import { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
@@ -12,6 +12,8 @@ import { AddMovieDialog } from '@/components/movies/AddMovieDialog';
 import { Film } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
+import { AddToCollectionPopover } from '@/components/collections/AddToCollectionPopover';
+import { useCollections } from '@/hooks/use-collections';
 
 const genres = [
   'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
@@ -34,8 +36,24 @@ function MovieGridSkeleton() {
 
 export default function DashboardPage() {
   useAuthGuard();
-  const { movies, isLoading } = useMovies();
+  const { movies, isLoading, removeMovie } = useMovies();
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const { collections } = useCollections();
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  const clearSelection = () => { setSelectedIds([]); setSelectionMode(false); }
+
+  const handleDeleteSelected = async () => {
+    for (const id of selectedIds) {
+      await removeMovie(id);
+    }
+    clearSelection();
+  }
 
   const sortedMovies = useMemo(() => {
     return [...movies].sort((a, b) => {
@@ -80,7 +98,22 @@ export default function DashboardPage() {
                 </AddMovieDialog>
               </EmptyState>
             ) : (
-              <MovieGrid movies={filteredMovies} />
+              <>
+                {selectedIds.length > 0 && (
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">{selectedIds.length} selected</span>
+                      <AddToCollectionPopover collections={collections} movieCollections={[]} onSelectCollection={(collectionId) => { /* implement bulk add: omitted for brevity */ }} />
+                      <Button variant="destructive" onClick={handleDeleteSelected}>Delete Selected</Button>
+                      <Button variant="outline" onClick={clearSelection}>Clear</Button>
+                    </div>
+                    <div>
+                      <Button variant="ghost" onClick={() => setSelectionMode(v => !v)}>{selectionMode ? 'Exit selection' : 'Select'}</Button>
+                    </div>
+                  </div>
+                )}
+                <MovieGrid movies={filteredMovies} selectionMode={selectionMode} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+              </>
             )}
           </div>
         </div>

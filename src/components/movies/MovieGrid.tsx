@@ -7,9 +7,12 @@ import { SearchX } from 'lucide-react';
 interface MovieGridProps {
   movies: (Movie & { publicLink?: string })[];
   usePublicLinks?: boolean;
+  selectionMode?: boolean;
+  selectedIds?: number[];
+  onToggleSelect?: (id: number) => void;
 }
 
-export function MovieGrid({ movies, usePublicLinks = false }: MovieGridProps) {
+export function MovieGrid({ movies, usePublicLinks = false, selectionMode = false, selectedIds = [], onToggleSelect }: MovieGridProps) {
   if (movies.length === 0) {
     return (
         <EmptyState
@@ -22,7 +25,7 @@ export function MovieGrid({ movies, usePublicLinks = false }: MovieGridProps) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       {movies.map((movie) => (
-        <MovieCard key={movie.id} movie={movie} usePublicLink={usePublicLinks} />
+        <MovieCard key={movie.id} movie={movie} usePublicLink={usePublicLinks} selectionMode={selectionMode} selected={selectedIds.includes(movie.id)} onToggleSelect={onToggleSelect} />
       ))}
     </div>
   );

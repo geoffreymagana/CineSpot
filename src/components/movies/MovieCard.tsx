@@ -11,13 +11,22 @@ import { getPosterUrl } from '@/lib/utils';
 interface MovieCardProps {
   movie: Movie & { publicLink?: string };
   usePublicLink?: boolean;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: number) => void;
 }
 
-export function MovieCard({ movie, usePublicLink = false }: MovieCardProps) {
+export function MovieCard({ movie, usePublicLink = false, selectionMode = false, selected = false, onToggleSelect }: MovieCardProps) {
   const href = usePublicLink ? movie.publicLink || `/title/${movie.id}` : `/title/${movie.id}`;
   
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleSelect?.(movie.id);
+  }
+
   return (
-    <Link href={href} className="group">
+    <Link href={href} className="group relative">
       <Card className="overflow-hidden bg-card/50 transition-transform duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-primary/20 h-full flex flex-col">
         <div className="relative aspect-[2/3] w-full">
             <Image
@@ -31,6 +40,13 @@ export function MovieCard({ movie, usePublicLink = false }: MovieCardProps) {
                 <div className="absolute top-2 left-2 z-10">
                    <WatchStatusBadge status={movie.watchStatus} className="bg-background/80 backdrop-blur-sm p-1.5 rounded-full shadow-lg" iconOnly />
                 </div>
+            )}
+
+            {selectionMode && (
+              <button onClick={handleCheckboxClick} aria-checked={selected} className="absolute top-2 right-2 z-20 bg-background/70 p-1 rounded-full border border-border">
+                {selected ? '✓' : '○'}
+                <span className="sr-only">Select {movie.title}</span>
+              </button>
             )}
         </div>
         <CardContent className="p-3 flex-1 flex flex-col justify-between">

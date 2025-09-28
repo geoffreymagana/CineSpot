@@ -108,14 +108,7 @@ export function CreateCollectionDialog({ children, open, onOpenChange }: CreateC
               placeholder="A short description for your collection..."
             />
           </div>
-          <div className="grid gap-2">
-             <Label htmlFor="cover-image">Cover Image (Optional)</Label>
-             <Button variant="outline" className="w-full aspect-video h-auto p-0 flex-col items-center justify-center border-2 border-dashed border-border cursor-pointer" disabled>
-                <Upload className="h-8 w-8 text-muted-foreground" />
-                <span className="text-muted-foreground mt-2">Upload a cover image</span>
-             </Button>
-             <p className="text-xs text-muted-foreground text-center">Cover upload coming soon.</p>
-          </div>
+       {/* Removed cover upload UI: cover images are not supported in this build; Dicebear PNG fallback will be used */}
         </div>
         <DialogFooter>
           <DialogClose asChild>

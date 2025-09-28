@@ -229,6 +229,9 @@ Recent changes and improvements
 
 - Special carousels & refill behavior: The Spotlight page includes deterministic special carousels ("Because you liked ...", "Because you added ...", "Finished Watching ...") and carousel refill/deduplication behavior so Spotlight features remain useful even if generative models do not return results.
 
+- Pinned collections: You can now pin up to 3 collections. Pinned collections appear in a dedicated "Pinned Collections" strip at the top of the Collections page. Drag and drop pinned collections to reorder them; the order is persisted to Firestore so it stays consistent across devices.
+
+
 Known issues and notes
 ----------------------
 

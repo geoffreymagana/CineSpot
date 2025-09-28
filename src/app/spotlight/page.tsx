@@ -174,15 +174,40 @@ export default function SpotlightPage() {
             />
             <div className="container px-4 py-6 md:px-6 lg:px-8">
               <div className="mt-8">
-                {recommendations?.carousels.map((carousel) => (
+                {(() => {
+                  // Deduplicate carousels by title and avoid showing the same movie multiple times across carousels.
+                  const seen = new Set<string | number>();
+                  const seenCarouselTitles = new Set<string>();
+                  const deduped: typeof recommendations.carousels = [];
+
+                  for (const carousel of recommendations?.carousels || []) {
+                    const titleKey = (carousel.title || '').toLowerCase().trim();
+                    if (seenCarouselTitles.has(titleKey)) continue;
+                    seenCarouselTitles.add(titleKey);
+
+                    const filtered = (carousel.recommendations || []).filter(m => {
+                      // prefer numeric id, fallback to title string
+                      const key = (m as any).id ?? (m as any).title ?? JSON.stringify(m);
+                      if (seen.has(String(key))) return false;
+                      seen.add(String(key));
+                      return true;
+                    });
+
+                    if (filtered.length > 0) {
+                      deduped.push({ ...carousel, recommendations: filtered } as any);
+                    }
+                  }
+
+                  return deduped.map((carousel) => (
                     <SpotlightSection
-                        key={carousel.title}
-                        title={<CarouselTitle rawTitle={carousel.title} />}
-                        icon={<Sparkles className="h-6 w-6 text-primary" />}
-                        movies={carousel.recommendations}
-                        isLoading={isLoadingRecommendations}
+                      key={carousel.title}
+                      title={<CarouselTitle rawTitle={carousel.title} />}
+                      icon={<Sparkles className="h-6 w-6 text-primary" />}
+                      movies={carousel.recommendations}
+                      isLoading={isLoadingRecommendations}
                     />
-                ))}
+                  ));
+                })()}
 
                 {/* Only render a separate Trending Now section if the carousels didn't already include it */}
                 {!recommendations?.carousels?.some(c => c.title.toLowerCase() === 'trending now') && (

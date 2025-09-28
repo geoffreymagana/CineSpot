@@ -8,11 +8,44 @@ import { FolderKanban, Loader2, PlusCircle } from 'lucide-react';
 import { useCollections } from '@/hooks/use-collections';
 import { CreateCollectionDialog } from '@/components/collections/CreateCollectionDialog';
 import { CollectionGrid } from '@/components/collections/CollectionGrid';
+import { CollectionCard } from '@/components/collections/CollectionCard';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
 
 export default function CollectionsPage() {
   useAuthGuard();
   const { collections, isLoading } = useCollections();
+  const { updateCollection } = useCollections();
+
+  // split pinned and non-pinned
+  const pinned = collections.filter(c => c.pinned).sort((a,b) => (a.pinnedIndex ?? 0) - (b.pinnedIndex ?? 0));
+  const others = collections.filter(c => !c.pinned);
+
+  // Drag & drop state for pinned strip
+  const handleDragStart = (e: React.DragEvent, idx: number) => {
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+
+  const handleDropOnPinned = async (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    const raw = e.dataTransfer.getData('text/plain');
+    const fromIdx = Number(raw);
+    if (Number.isNaN(fromIdx)) return;
+    const reordered = [...pinned];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(targetIdx, 0, moved);
+
+    // Persist new pinnedIndex values
+    for (let i = 0; i < reordered.length; i++) {
+      const col = reordered[i];
+      if ((col.pinnedIndex ?? -1) !== i) {
+        await updateCollection(col.id, { pinnedIndex: i });
+      }
+    }
+  };
+
+  const allowDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -30,7 +63,7 @@ export default function CollectionsPage() {
               </Button>
             </CreateCollectionDialog>
           </div>
-          {isLoading ? (
+       {isLoading ? (
              <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-16 w-16 animate-spin" />
              </div>
@@ -44,8 +77,36 @@ export default function CollectionsPage() {
                 <Button size="lg">Create Your First Collection</Button>
               </CreateCollectionDialog>
             </EmptyState>
+          ) : collections.length === 0 ? (
+            <EmptyState
+              icon={<FolderKanban className="h-16 w-16 text-muted-foreground" />}
+              title="No Collections Yet"
+              description="Create collections to organize your movies and shows."
+            >
+              <CreateCollectionDialog>
+                <Button size="lg">Create Your First Collection</Button>
+              </CreateCollectionDialog>
+            </EmptyState>
           ) : (
-            <CollectionGrid collections={collections} />
+            <>
+              {pinned.length > 0 && (
+                <section className="mb-8">
+                  <h2 className="text-xl font-semibold text-white mb-4">Pinned Collections</h2>
+                  <div className="flex gap-4 overflow-x-auto py-2" onDragOver={allowDrop}>
+                    {pinned.map((col, idx) => (
+                      <div key={col.id} draggable onDragStart={(e) => handleDragStart(e, idx)} onDrop={(e) => handleDropOnPinned(e, idx)} className="min-w-[260px]">
+                        <CollectionCard collection={col} />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section>
+                <h2 className="text-xl font-semibold text-white mb-4">All Collections</h2>
+                <CollectionGrid collections={others} />
+              </section>
+            </>
           )}
         </div>
       </main>

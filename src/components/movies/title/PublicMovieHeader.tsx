@@ -158,10 +158,7 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
         <div className="relative z-10">
           <div className="container max-w-screen-2xl mx-auto px-4 py-8 md:px-6 lg:px-8">
               <div className="mb-8">
-                  <Link href="/spotlight" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
-                      <ArrowLeft className="w-4 h-4" />
-                      Back to Spotlight
-                  </Link>
+                {/* Removed Back to Spotlight for public pages */}
               </div>
               <div className="flex flex-col md:flex-row gap-8">
                 {/* Poster */}

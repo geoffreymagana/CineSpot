@@ -146,8 +146,8 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button asChild variant="outline"><Link href="/help">Help & Documentation</Link></Button>
-                  <Button asChild variant="outline"><Link href="#">Contact Support</Link></Button>
-                   <Button asChild variant="outline"><Link href="#">Provide Feedback</Link></Button>
+                  <Button asChild variant="outline"><Link href="/about">About</Link></Button>
+                  <Button asChild variant="outline"><a href="https://docs.google.com/forms/d/e/1FAIpQLSf7RHKFK1R7zbBityZhPS0FHJk68eh9k4ttQTaceBBN3CUpaA/viewform?usp=header" target="_blank" rel="noreferrer">Provide Feedback</a></Button>
                 </div>
             </CardContent>
           </Card>

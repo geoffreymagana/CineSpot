@@ -22,6 +22,7 @@ interface CollectionContextType {
   addMovieToCollection: (collectionId: string, movieId: number) => void;
   getCollectionsForMovie: (movieId: number) => string[];
   refetch: () => void;
+  togglePin: (collectionId: string) => Promise<void>;
 }
 
 export const CollectionContext = createContext<CollectionContextType | undefined>(undefined);
@@ -145,6 +146,27 @@ export function CollectionProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const togglePin = async (collectionId: string) => {
+    if (!user) throw new Error('User not authenticated.');
+    const current = collections.find(c => c.id === collectionId);
+    if (!current) return;
+
+    const pinnedCount = collections.filter(c => c.pinned).length;
+    const newPinned = !current.pinned;
+
+    // If trying to pin and already at limit, show toast and abort
+    if (newPinned && pinnedCount >= 3) {
+      toast({ variant: 'destructive', title: 'Pin Limit', description: 'You can pin up to 3 collections.' });
+      return;
+    }
+
+    try {
+      await updateCollection(collectionId, { pinned: newPinned });
+    } catch (e) {
+      // updateCollection will already show an error toast
+    }
+  }
+
   const addMovieToCollection = (collectionId: string, movieId: number) => {
     const collection = collections.find(c => c.id === collectionId);
     if (!collection) return;
@@ -176,7 +198,7 @@ export function CollectionProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <CollectionContext.Provider value={{ collections, isLoading, createCollection, updateCollection, deleteCollection, addMovieToCollection, getCollectionsForMovie, refetch: () => {} }}>
+    <CollectionContext.Provider value={{ collections, isLoading, createCollection, updateCollection, deleteCollection, addMovieToCollection, getCollectionsForMovie, refetch: () => {}, togglePin }}>
       {children}
     </CollectionContext.Provider>
   );
