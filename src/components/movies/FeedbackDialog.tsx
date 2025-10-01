@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ interface FeedbackDialogProps {
   children: React.ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (reason: string) => void;
+  onSubmit: (reason: string) => Promise<void>;
   title: string;
 }
 
@@ -36,10 +36,19 @@ export function FeedbackDialog({
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    await onSubmit(reason);
-    setIsSubmitting(false);
-    onOpenChange(false);
+    try {
+        await onSubmit(reason);
+        onOpenChange(false);
+    } finally {
+        setIsSubmitting(false);
+    }
   };
+
+  useEffect(() => {
+    if (!open) {
+      setReason('');
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -67,7 +76,7 @@ export function FeedbackDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" disabled={isSubmitting}>
               Cancel
             </Button>
           </DialogClose>

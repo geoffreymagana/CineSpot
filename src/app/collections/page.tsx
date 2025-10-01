@@ -53,7 +53,7 @@ export default function CollectionsPage() {
       <main className="flex-1">
         <div className="container px-4 py-6 md:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-white">
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-foreground">
               Collections
             </h1>
             <CreateCollectionDialog>
@@ -91,7 +91,7 @@ export default function CollectionsPage() {
             <>
               {pinned.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="text-xl font-semibold text-white mb-4">Pinned Collections</h2>
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Pinned Collections</h2>
                   <div className="flex gap-4 overflow-x-auto py-2" onDragOver={allowDrop}>
                     {pinned.map((col, idx) => (
                       <div key={col.id} draggable onDragStart={(e) => handleDragStart(e, idx)} onDrop={(e) => handleDropOnPinned(e, idx)} className="min-w-[260px]">
@@ -103,7 +103,7 @@ export default function CollectionsPage() {
               )}
 
               <section>
-                <h2 className="text-xl font-semibold text-white mb-4">All Collections</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">All Collections</h2>
                 <CollectionGrid collections={others} />
               </section>
             </>

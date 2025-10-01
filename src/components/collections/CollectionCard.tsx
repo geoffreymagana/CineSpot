@@ -21,6 +21,7 @@ import {
 import { useCollections } from '@/hooks/use-collections';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 import { getBackdropUrl } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface CollectionCardProps {
   collection: Collection;
@@ -29,6 +30,7 @@ interface CollectionCardProps {
 export function CollectionCard({ collection }: CollectionCardProps) {
   const { movies } = useMovies();
   const { deleteCollection } = useCollections();
+  const router = useRouter();
   const movieCount = collection.movieIds.length;
   const firstMovieId = collection.movieIds[0];
   const firstMovie = movies.find(m => m.id === firstMovieId);
@@ -73,7 +75,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
         </CardContent>
         <div className="flex-1 flex flex-col p-4">
             <CardHeader className="p-0">
-              <h3 className="font-headline text-lg font-extrabold text-white truncate group-hover:text-primary">
+              <h3 className="font-headline text-lg font-extrabold text-foreground truncate group-hover:text-primary">
                 {collection.name}
               </h3>
                <p className="text-sm text-muted-foreground line-clamp-2 h-[40px] flex-grow">
@@ -81,7 +83,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
               </p>
             </CardHeader>
             <CardFooter className="p-0 pt-4 text-sm text-muted-foreground flex justify-start items-end mt-auto">
-               <div className="flex items-center gap-2 text-white">
+               <div className="flex items-center gap-2 text-foreground">
                 <Film className="h-4 w-4"/>
                 <span>{movieCount} {movieCount === 1 ? 'title' : 'titles'}</span>
                </div>
@@ -93,20 +95,37 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             <Pin className="h-4 w-4" />
             <span className="sr-only">{collection.pinned ? 'Unpin collection' : 'Pin collection'}</span>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="h-8 w-8" onClick={e => {e.preventDefault(); e.stopPropagation()}}>
-                <MoreVertical className="h-4 w-4" />
-                <span className="sr-only">More options</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(e as any); }}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Collection
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={e => {e.preventDefault(); e.stopPropagation()}}>
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">More options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Collection
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+             <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the "{collection.name}" collection.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
       </div>
     </Link>
   );

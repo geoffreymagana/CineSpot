@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { AnalyticsPlaceholder } from './analytics-placeholder';
 
 export default function ProfilePage() {
   useAuthGuard();
@@ -30,7 +31,7 @@ export default function ProfilePage() {
       <main className="flex-1">
         <div className="container max-w-screen-lg mx-auto py-10">
           <div className="space-y-2 mb-8">
-            <h1 className="font-headline text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="font-headline text-3xl font-extrabold tracking-tight text-foreground">
               Profile & Personalization
             </h1>
             <p className="text-muted-foreground">
@@ -38,9 +39,10 @@ export default function ProfilePage() {
             </p>
           </div>
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-3 max-w-lg">
               <TabsTrigger value="profile">Personal Information</TabsTrigger>
               <TabsTrigger value="personalization">Appearance</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
             <TabsContent value="profile" className="mt-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -67,6 +69,9 @@ export default function ProfilePage() {
             </TabsContent>
             <TabsContent value="personalization" className="mt-6">
               <ThemeCustomizer />
+            </TabsContent>
+             <TabsContent value="analytics" className="mt-6">
+              <AnalyticsPlaceholder />
             </TabsContent>
           </Tabs>
         </div>

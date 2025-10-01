@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { Movie } from '@/lib/types';
+import type { Movie, Collection } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -67,7 +67,7 @@ const DetailItem = ({ icon: Icon, label, value, children }: { icon: React.Elemen
            <Icon className='w-4 h-4' />
            <span>{label}</span>
         </div>
-        <div className="text-base font-medium text-white">{value}</div>
+        <div className="text-base font-medium text-foreground">{value}</div>
         {children}
     </div>
 )
@@ -75,7 +75,7 @@ const DetailItem = ({ icon: Icon, label, value, children }: { icon: React.Elemen
 export function MovieHeader({ movie }: MovieHeaderProps) {
   const router = useRouter();
   const { updateMovie, removeMovie } = useMovies();
-  const { collections, addMovieToCollection, getCollectionsForMovie } = useCollections();
+  const { collections, addMovieToCollection, getCollectionsForMovie, createCollection } = useCollections();
   const { getUserDataForMovie, updateUserData } = useUserMovieData();
   
   const userData = getUserDataForMovie(movie.id);
@@ -83,9 +83,9 @@ export function MovieHeader({ movie }: MovieHeaderProps) {
   const director = movie.credits?.crew.find(c => c.job === 'Director');
   const writer = movie.credits?.crew.find(c => c.job === 'Writer' || c.job === 'Screenplay');
 
-  const handleDelete = () => {
-    removeMovie(movie.id);
-    router.push('/');
+  const handleDelete = async () => {
+    await removeMovie(movie.id);
+    router.replace('/');
   }
   
   const handleRatingChange = (newRating: number) => {
@@ -105,9 +105,14 @@ export function MovieHeader({ movie }: MovieHeaderProps) {
     }
   }
 
+  const handleCreateCollection = async (newCollection: Partial<Collection>) => {
+    const newCollectionId = await createCollection(newCollection as any);
+    return newCollectionId;
+  };
+
   return (
     <>
-      <div className="relative w-full text-white pb-12">
+      <div className="relative w-full text-foreground pb-12">
         {/* Backdrop */}
         <div className="absolute inset-0 h-[60vh] md:h-[80vh]">
           <Image
@@ -125,7 +130,7 @@ export function MovieHeader({ movie }: MovieHeaderProps) {
         <div className="relative z-10">
           <div className="container max-w-screen-2xl mx-auto px-4 py-8 md:px-6 lg:px-8">
               <div className="mb-8">
-                  <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
+                  <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                       <ArrowLeft className="w-4 h-4" />
                       Back to Library
                   </Link>
@@ -171,6 +176,7 @@ export function MovieHeader({ movie }: MovieHeaderProps) {
                               collections={collections}
                               movieCollections={getCollectionsForMovie(movie.id)}
                               onSelectCollection={(collectionId) => addMovieToCollection(collectionId, movie.id)}
+                              onCollectionCreate={handleCreateCollection}
                           />
                       </div>
                        <AlertDialog>

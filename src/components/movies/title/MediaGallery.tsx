@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 import type { Movie } from '@/lib/types';
@@ -24,7 +25,7 @@ export function MediaGallery({ images }: MediaGalleryProps) {
 
   return (
     <div>
-      <h2 className="font-headline text-2xl font-extrabold text-white mb-4">Media</h2>
+      <h2 className="font-headline text-2xl font-extrabold text-foreground mb-4">Media</h2>
       <Tabs defaultValue="backdrops">
         <TabsList>
           <TabsTrigger value="backdrops">Backdrops ({images.backdrops.length})</TabsTrigger>

@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/manifest.json',
+        source: '/:path*',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
@@ -60,7 +60,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Access-Control-Allow-Methods',
-            value: 'GET',
+            value: 'GET, POST, OPTIONS, PUT, DELETE',
           },
           {
             key: 'Access-Control-Allow-Headers',

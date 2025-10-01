@@ -1,9 +1,10 @@
-
  'use client';
 import { Header } from '@/components/layout/Header';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, FolderKanban, Sparkles, Palette, Import } from 'lucide-react';
+import { Users, FolderKanban, Sparkles, Palette, Import, MessageSquareQuote } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const supportTopics = [
     {
@@ -108,14 +109,25 @@ export default function HelpPage() {
 
                     <Card className="mt-8">
                         <CardHeader>
-                            <CardTitle>Contact Support</CardTitle>
-                            <CardDescription>Still have questions? We're here to help.</CardDescription>
+                             <div className="flex items-center gap-4">
+                                <MessageSquareQuote className="h-8 w-8 text-primary" />
+                                <div>
+                                    <CardTitle>Feedback & Support</CardTitle>
+                                    <CardDescription>Still have questions or an idea for a feature? We're here to help.</CardDescription>
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">If you can't find what you're looking for, reach out to our support team.</p>
-                            <p className="mt-4">
-                                <a href="mailto:support@cinespot.com" className="text-primary hover:underline">support@cinespot.com</a>
-                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                <Button asChild>
+                                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSf7RHKFK1R7zbBityZhPS0FHJk68eh9k4ttQTaceBBN3CUpaA/viewform?usp=header" target="_blank" rel="noreferrer">
+                                        Provide Feedback
+                                    </a>
+                                </Button>
+                                 <Button asChild variant="outline">
+                                    <a href="mailto:support@cinespot.com" className="text-primary hover:underline">Contact Support</a>
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

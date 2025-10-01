@@ -1,6 +1,8 @@
 
 'use client';
 import { z } from 'zod';
+import type { Timestamp } from 'firebase/firestore';
+
 
 const GenreSchema = z.object({
   id: z.number(),
@@ -87,6 +89,7 @@ export const BaseMovieSchema = z.object({
   rewatchCount: z.number().optional(),
   number_of_episodes: z.number().optional(),
   number_of_seasons: z.number().optional(),
+  addedAt: z.any().optional(), // Can be Firestore Timestamp or string
 });
 
 // Optional version for general use where the whole object might be missing

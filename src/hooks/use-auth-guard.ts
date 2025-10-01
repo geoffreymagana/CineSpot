@@ -11,7 +11,7 @@ export const useAuthGuard = (redirectTo = '/auth/login') => {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user && !pathname.startsWith('/public')) {
+    if (!loading && !user && !pathname.startsWith('/public') && !pathname.startsWith('/auth')) {
       router.push(redirectTo);
     }
   }, [user, loading, router, redirectTo, pathname]);
@@ -23,7 +23,10 @@ export const useRedirectIfAuthenticated = (redirectTo = '/') => {
 
     useEffect(() => {
         if (!loading && user) {
-            router.push(redirectTo);
+            // Only redirect if on an auth page
+            if (window.location.pathname.startsWith('/auth')) {
+                router.push(redirectTo);
+            }
         }
     }, [user, loading, router, redirectTo]);
 }

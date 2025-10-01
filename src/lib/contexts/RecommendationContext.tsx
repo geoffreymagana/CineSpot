@@ -6,7 +6,7 @@ import type { Movie } from '@/lib/types';
 import { useMovies } from '@/lib/hooks/use-movies';
 import { useUserMovieData } from '@/hooks/use-user-movie-data';
 import { spotlightRecommendations, SpotlightRecommendationsOutput as AIOutput } from '@/ai/flows/spotlight-recommendations';
-import { getTopRatedMovies, getTrendingMovies, getUpcomingMovies, searchMovies, getRecommendationsForTitle } from '@/lib/services/tmdb';
+import { getTopRatedMovies, getTrendingMovies, getUpcomingMovies, searchMovies, getRecommendationsForTitle, getTitleDetails as tmdbGetTitleDetails } from '@/lib/services/tmdb';
 import { useToast } from '@/hooks/use-toast';
 
 // The final shape of our data after fetching details
@@ -201,7 +201,7 @@ export function RecommendationProvider({ children }: { children: ReactNode }) {
         const likedSeed = likedMovies[0];
         try {
           const recs = await getRecommendationsForTitle(likedSeed.id, likedSeed.media_type || 'movie');
-    const resolved = (await Promise.all(recs.slice(0,6).map((r: any) => fetchMovieDetails((r as any).title)))).filter(Boolean) as Movie[];
+          const resolved = (await Promise.all(recs.slice(0,6).map((r: any) => tmdbGetTitleDetails(r.id, r.media_type)))).filter(Boolean) as Movie[];
           const filtered = resolved.filter(r => !libraryIds.has(r.id)).slice(0,5);
           if (filtered.length > 0) specialCarousels.push({ title: `Because you liked ${likedSeed.title}`, recommendations: filtered });
         } catch (e) {
@@ -214,7 +214,7 @@ export function RecommendationProvider({ children }: { children: ReactNode }) {
         const addedSeed = addedMovies[0];
         try {
           const recs = await getRecommendationsForTitle(addedSeed.id, addedSeed.media_type || 'movie');
-    const resolved = (await Promise.all(recs.slice(0,6).map((r: any) => fetchMovieDetails((r as any).title)))).filter(Boolean) as Movie[];
+          const resolved = (await Promise.all(recs.slice(0,6).map((r: any) => tmdbGetTitleDetails(r.id, r.media_type)))).filter(Boolean) as Movie[];
           const filtered = resolved.filter(r => !libraryIds.has(r.id)).slice(0,5);
           if (filtered.length > 0) specialCarousels.push({ title: `Because you added ${addedSeed.title}`, recommendations: filtered });
         } catch (e) {
@@ -227,7 +227,7 @@ export function RecommendationProvider({ children }: { children: ReactNode }) {
       if (recentlyFinished) {
         try {
           const recs = await getRecommendationsForTitle(recentlyFinished.id, 'tv');
-    const resolved = (await Promise.all(recs.slice(0,6).map((r: any) => fetchMovieDetails((r as any).title)))).filter(Boolean) as Movie[];
+          const resolved = (await Promise.all(recs.slice(0,6).map((r: any) => tmdbGetTitleDetails(r.id, r.media_type)))).filter(Boolean) as Movie[];
           const filtered = resolved.filter(r => !libraryIds.has(r.id)).slice(0,5);
           if (filtered.length > 0) specialCarousels.push({ title: `Finished Watching: ${recentlyFinished.title}? Try these`, recommendations: filtered });
         } catch (e) {
@@ -330,21 +330,21 @@ export function RecommendationProvider({ children }: { children: ReactNode }) {
   const watchedSeed = watchedMovies[0];
         if (watchedSeed) {
           const recs = (await getRecommendationsForTitle(watchedSeed.id, watchedSeed.media_type || 'movie')).slice(0,5) as import('@/lib/types').Movie[];
-          const resolved = await Promise.all(recs.map(r => fetchMovieDetails((r as any).title)));
+          const resolved = await Promise.all(recs.map(r => tmdbGetTitleDetails(r.id, r.media_type)));
           const filtered = (resolved.filter(Boolean) as Movie[]).filter(r => !libraryIds.has(r.id));
           if (filtered.length) carouselsDetails.push({ title: `Because you watched ${watchedSeed.title}`, recommendations: filtered.slice(0,5) });
         }
         const likedSeed = likedMovies[0];
         if (likedSeed) {
           const recs = (await getRecommendationsForTitle(likedSeed.id, likedSeed.media_type || 'movie')).slice(0,5) as import('@/lib/types').Movie[];
-          const resolved = await Promise.all(recs.map(r => fetchMovieDetails((r as any).title)));
+          const resolved = await Promise.all(recs.map(r => tmdbGetTitleDetails(r.id, r.media_type)));
           const filtered = (resolved.filter(Boolean) as Movie[]).filter(r => !libraryIds.has(r.id));
           if (filtered.length) carouselsDetails.push({ title: `Because you liked ${likedSeed.title}`, recommendations: filtered.slice(0,5) });
         }
         const addedSeed = addedMovies[0];
         if (addedSeed) {
           const recs = (await getRecommendationsForTitle(addedSeed.id, addedSeed.media_type || 'movie')).slice(0,5) as import('@/lib/types').Movie[];
-          const resolved = await Promise.all(recs.map(r => fetchMovieDetails((r as any).title)));
+          const resolved = await Promise.all(recs.map(r => tmdbGetTitleDetails(r.id, r.media_type)));
           const filtered = (resolved.filter(Boolean) as Movie[]).filter(r => !libraryIds.has(r.id));
           if (filtered.length) carouselsDetails.push({ title: `Since you added ${addedSeed.title}`, recommendations: filtered.slice(0,5) });
         }

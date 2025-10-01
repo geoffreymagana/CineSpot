@@ -19,7 +19,7 @@ import {
 import { getBackdropUrl } from '@/lib/utils';
 
 interface RecommendationCarouselProps {
-  movies: (Movie & { publicLink: string })[];
+  movies: Movie[];
   onCollect: (movie: Movie) => void;
   onFeedback: (movie: Movie, liked: boolean, reason?: string) => void;
 }
@@ -64,7 +64,7 @@ export function RecommendationCarousel({
                 <div className="relative z-10 flex h-[60vh] md:h-[80vh] flex-col justify-end">
                 <div className="container max-w-screen-2xl mx-auto px-4 py-8 md:px-6 lg:px-8">
                     <div className="max-w-2xl text-center md:text-left">
-                    <h1 className="font-headline text-4xl lg:text-6xl font-extrabold text-white">
+                    <h1 className="font-headline text-4xl lg:text-6xl font-extrabold text-foreground">
                         {movie.title}
                     </h1>
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-4">
@@ -77,7 +77,7 @@ export function RecommendationCarousel({
                     </p>
 
                     <div className="flex flex-wrap gap-2 mt-6 justify-center md:justify-start">
-                        <Link href={movie.publicLink}>
+                        <Link href={`/recommendation/${movie.id}`}>
                         <Button size="lg" variant="secondary">
                             <Info className="mr-2" />
                             More Info
@@ -110,8 +110,8 @@ export function RecommendationCarousel({
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex text-white bg-black/20 border-white/20 hover:bg-white/20"/>
-      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex text-white bg-black/20 border-white/20 hover:bg-white/20"/>
+      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex text-foreground bg-black/20 border-white/20 hover:bg-white/20"/>
+      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex text-foreground bg-black/20 border-white/20 hover:bg-white/20"/>
     </Carousel>
   );
 }

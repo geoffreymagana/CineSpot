@@ -6,18 +6,19 @@ import type { Movie } from '@/lib/types';
 import { Star } from 'lucide-react';
 import { WatchStatusBadge } from './WatchStatusBadge';
 import { getPosterUrl } from '@/lib/utils';
+import { Checkbox } from '../ui/checkbox';
 
 
 interface MovieCardProps {
-  movie: Movie & { publicLink?: string };
-  usePublicLink?: boolean;
+  movie: Movie;
   selectionMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: number) => void;
+  linkPrefix?: string;
 }
 
-export function MovieCard({ movie, usePublicLink = false, selectionMode = false, selected = false, onToggleSelect }: MovieCardProps) {
-  const href = usePublicLink ? movie.publicLink || `/title/${movie.id}` : `/title/${movie.id}`;
+export function MovieCard({ movie, selectionMode = false, selected = false, onToggleSelect, linkPrefix = '/title' }: MovieCardProps) {
+  const href = `${linkPrefix}/${movie.id}`;
   
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -43,15 +44,14 @@ export function MovieCard({ movie, usePublicLink = false, selectionMode = false,
             )}
 
             {selectionMode && (
-              <button onClick={handleCheckboxClick} aria-checked={selected} className="absolute top-2 right-2 z-20 bg-background/70 p-1 rounded-full border border-border">
-                {selected ? '✓' : '○'}
-                <span className="sr-only">Select {movie.title}</span>
-              </button>
+              <div onClick={handleCheckboxClick} className="absolute top-2 right-2 z-20 p-2">
+                <Checkbox checked={selected} aria-label={`Select ${movie.title}`} />
+              </div>
             )}
         </div>
         <CardContent className="p-3 flex-1 flex flex-col justify-between">
             <div>
-              <p className="font-bold text-white truncate text-sm group-hover:text-primary transition-colors">{movie.title}</p>
+              <p className="font-bold text-foreground truncate text-sm group-hover:text-primary transition-colors">{movie.title}</p>
               <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
                 <span>{movie.release_date.substring(0, 4)}</span>
                 <div className="flex items-center gap-1">

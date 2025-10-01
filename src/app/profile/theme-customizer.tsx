@@ -4,8 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, MonitorSmartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const accentColors = [
@@ -17,16 +16,18 @@ const accentColors = [
 ];
 
 export function ThemeCustomizer() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [theme, setTheme] = useState('dark');
   const [accent, setAccent] = useState(accentColors[0].value);
 
   useEffect(() => {
-    // On mount, check the current theme from the DOM
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
+    // On mount, check the current theme from localStorage or the DOM
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+    document.documentElement.classList.remove('light', 'dark', 'lights-out');
+    document.documentElement.classList.add(savedTheme);
     
     // Get the current primary color from CSS variables
-    const currentAccent = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+    const currentAccent = localStorage.getItem('accent-color') || getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
     if(currentAccent) {
       const matchingColor = accentColors.find(c => c.value === currentAccent);
       if(matchingColor) {
@@ -35,15 +36,11 @@ export function ThemeCustomizer() {
     }
   }, []);
 
-  const handleThemeToggle = (darkMode: boolean) => {
-    setIsDarkMode(darkMode);
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+    document.documentElement.classList.remove('light', 'dark', 'lights-out');
+    document.documentElement.classList.add(newTheme);
+    localStorage.setItem('theme', newTheme);
   };
 
   const handleAccentChange = (colorValue: string) => {
@@ -54,7 +51,7 @@ export function ThemeCustomizer() {
   };
   
   const handleReset = () => {
-    handleThemeToggle(true);
+    handleThemeChange('dark');
     handleAccentChange(accentColors[0].value);
   }
 
@@ -70,11 +67,14 @@ export function ThemeCustomizer() {
         <div className="space-y-2">
           <Label>Color Mode</Label>
           <div className="flex items-center space-x-2 rounded-lg bg-secondary p-2 max-w-min">
-            <Button variant={!isDarkMode ? 'default': 'ghost'} size="sm" onClick={() => handleThemeToggle(false)} className="flex gap-2">
+            <Button variant={theme === 'light' ? 'default': 'ghost'} size="sm" onClick={() => handleThemeChange('light')} className="flex gap-2">
                 <Sun className="h-4 w-4" /> Light
             </Button>
-             <Button variant={isDarkMode ? 'default': 'ghost'} size="sm" onClick={() => handleThemeToggle(true)} className="flex gap-2">
+             <Button variant={theme === 'dark' ? 'default': 'ghost'} size="sm" onClick={() => handleThemeChange('dark')} className="flex gap-2">
                 <Moon className="h-4 w-4" /> Dark
+            </Button>
+            <Button variant={theme === 'lights-out' ? 'default' : 'ghost'} size="sm" onClick={() => handleThemeChange('lights-out')} className="flex gap-2">
+                <MonitorSmartphone className="h-4 w-4" /> Lights Out
             </Button>
           </div>
         </div>

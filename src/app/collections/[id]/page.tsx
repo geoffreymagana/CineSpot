@@ -74,7 +74,7 @@ export default function CollectionDetailPage() {
         <div className="container px-4 py-6 md:px-6 lg:px-8">
           <div className="mb-8 flex flex-col md:flex-row justify-between items-start gap-4">
             <div>
-              <h1 className="font-headline text-4xl font-extrabold tracking-tight text-white">
+              <h1 className="font-headline text-4xl font-extrabold tracking-tight text-foreground">
                 {collection.name}
               </h1>
               <p className="text-muted-foreground mt-2 max-w-2xl">

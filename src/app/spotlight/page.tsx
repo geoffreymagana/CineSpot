@@ -55,26 +55,20 @@ function SpotlightSection({
     return null;
   }
 
-  const moviesWithPublicLinks = movies.map(movie => ({
-    ...movie,
-    publicLink: `/public/title/${movie.id}?media_type=${movie.media_type || 'movie'}`
-  }));
-
-
   return (
     <div className="mb-12">
       <div className="flex items-center gap-2 mb-4">
         {icon}
         <h2
           className={cn(
-            'font-headline text-2xl font-extrabold tracking-tight text-white',
+            'font-headline text-2xl font-extrabold tracking-tight text-foreground',
             titleClassName
           )}
         >
           {title}
         </h2>
       </div>
-      <MovieGrid movies={moviesWithPublicLinks} usePublicLinks={true} />
+      <MovieGrid movies={movies} linkPrefix="/recommendation" />
     </div>
   );
 }
@@ -168,7 +162,7 @@ export default function SpotlightPage() {
         ) : recommendations && recommendations.topPicks.length > 0 ? (
           <>
             <RecommendationCarousel
-              movies={recommendations.topPicks.map(m => ({ ...m, publicLink: `/public/title/${m.id}?media_type=${m.media_type || 'movie'}` }))}
+              movies={recommendations.topPicks}
               onCollect={handleCollect}
               onFeedback={handleFeedback}
             />

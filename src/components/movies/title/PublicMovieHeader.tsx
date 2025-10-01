@@ -37,6 +37,7 @@ import { useUserMovieData } from '@/hooks/use-user-movie-data';
 
 interface PublicMovieHeaderProps {
   movie: Movie;
+  children?: React.ReactNode;
 }
 
 const DetailItem = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: React.ReactNode, children?: React.ReactNode }) => (
@@ -45,22 +46,18 @@ const DetailItem = ({ icon: Icon, label, value, children }: { icon: React.Elemen
            <Icon className='w-4 h-4' />
            <span>{label}</span>
         </div>
-        <div className="text-base font-medium text-white">{value}</div>
+        <div className="text-base font-medium text-foreground">{value}</div>
         {children}
     </div>
 )
 
-export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProps) {
+export function PublicMovieHeader({ movie: initialMovie, children }: PublicMovieHeaderProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { addMovie, isMovieAdded } = useMovies();
-  const { removeRecommendation } = useRecommendations();
   const { toast } = useToast();
-  const { updateUserData } = useUserMovieData();
   
   const movie = initialMovie;
-  const [feedbackGiven, setFeedbackGiven] = useState(false);
-  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [providers, setProviders] = useState<any | null>(null);
 
   useEffect(() => {
@@ -79,12 +76,34 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
   const director = movie.credits?.crew.find(c => c.job === 'Director');
   const writer = movie.credits?.crew.find(c => c.job === 'Writer' || c.job === 'Screenplay');
 
-  // Public pages should not expose actions that modify user libraries or accept feedback.
-  // The add-to-library and feedback handlers were removed intentionally.
+  const handleCollect = async () => {
+    if (!user) {
+        router.push('/auth/login');
+        return;
+    }
+    if (isMovieAdded(movie.id)) {
+      toast({ title: 'Already in library' });
+      return;
+    }
+    try {
+      const fullDetails = await getTitleDetails(movie.id, movie.media_type || 'movie');
+      await addMovie(fullDetails);
+      toast({
+        title: "Added to Library!",
+        description: `"${movie.title}" is now in your library.`
+      });
+    } catch(e) {
+      console.error("Error collecting title:", e);
+      toast({
+        variant: 'destructive',
+        title: "Error adding title"
+      })
+    }
+  };
 
   return (
     <>
-      <div className="relative w-full text-white pb-12">
+      <div className="relative w-full text-foreground pb-12">
         {/* Backdrop */}
         <div className="absolute inset-0 h-[60vh] md:h-[80vh]">
           <Image
@@ -101,10 +120,7 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
         {/* Content */}
         <div className="relative z-10">
           <div className="container max-w-screen-2xl mx-auto px-4 py-8 md:px-6 lg:px-8">
-              <div className="mb-8">
-                {/* Removed Back to Spotlight for public pages */}
-              </div>
-              <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex flex-col md:flex-row gap-8 pt-8">
                 {/* Poster */}
                 <div className="w-48 flex-shrink-0 md:w-64 mx-auto md:mx-0">
                   <Image
@@ -118,7 +134,7 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
 
                 {/* Details */}
                 <div className="flex-1 flex flex-col justify-end text-center md:text-left">
-                  <h1 className="font-headline text-4xl lg:text-6xl font-extrabold">
+                  <h1 className="font-headline text-4xl lg:text-6xl font-extrabold text-foreground">
                     {movie.title}
                   </h1>
                   {movie.tagline && <p className="text-lg text-muted-foreground mt-1 italic">"{movie.tagline}"</p>}
@@ -131,11 +147,24 @@ export function PublicMovieHeader({ movie: initialMovie }: PublicMovieHeaderProp
 
                   <div className="flex flex-wrap gap-2 mt-6 justify-center md:justify-start">
                     <TrailerPlayer videos={movie.videos}>
-                      <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white">
+                      <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                           <PlayCircle className="md:mr-2" />
                           <span className="hidden md:inline">Play Trailer</span>
                       </Button>
                     </TrailerPlayer>
+                     {children ? children : (
+                         isMovieAdded(movie.id) ? (
+                            <Button size="lg" disabled>
+                                <CheckCircle className="mr-2" />
+                                In Your Library
+                            </Button>
+                            ) : (
+                            <Button size="lg" onClick={handleCollect}>
+                                <PlusCircle className="mr-2" />
+                                Add to Library
+                            </Button>
+                        )
+                     )}
                   </div>
 
 

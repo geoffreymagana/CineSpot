@@ -56,10 +56,24 @@ export default function DashboardPage() {
   }
 
   const sortedMovies = useMemo(() => {
+    const getTimestamp = (movie: any) => {
+        const addedAt = movie.addedAt;
+        if (!addedAt) return new Date(movie.release_date).getTime(); // Fallback for older data
+        // Firestore timestamps can be objects with toMillis, or ISO strings
+        return typeof addedAt.toMillis === 'function' ? addedAt.toMillis() : new Date(addedAt).getTime();
+    };
+
     return [...movies].sort((a, b) => {
-      if (a.watchStatus === 'Completed' && b.watchStatus !== 'Completed') return 1;
-      if (a.watchStatus !== 'Completed' && b.watchStatus === 'Completed') return -1;
-      return new Date(b.release_date).getTime() - new Date(a.release_date).getTime();
+      // Completed movies go to the bottom
+      const aIsCompleted = a.watchStatus === 'Completed';
+      const bIsCompleted = b.watchStatus === 'Completed';
+      if (aIsCompleted && !bIsCompleted) return 1;
+      if (!aIsCompleted && bIsCompleted) return -1;
+      
+      // Sort by addedAt timestamp descending (newest first)
+      const aTime = getTimestamp(a);
+      const bTime = getTimestamp(b);
+      return bTime - aTime;
     });
   }, [movies]);
 

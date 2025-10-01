@@ -78,7 +78,7 @@ export function Header() {
                     onClick={() => setIsSheetOpen(false)}
                   >
                     <CineSpotLogo className="h-8 w-8" />
-                    <span className="font-headline text-xl font-extrabold text-white">Cine-Spot</span>
+                    <span className="font-headline text-xl font-extrabold text-foreground">Cine-Spot</span>
                   </Link>
                   {navLinks.map((link) => (
                     <NavLink key={link.href} {...link} onLinkClick={() => setIsSheetOpen(false)} />
@@ -89,7 +89,7 @@ export function Header() {
             
             <Link href="/" className="hidden md:flex items-center space-x-2">
               <CineSpotLogo className="h-8 w-8" />
-              <span className="inline-block font-headline text-xl font-extrabold text-white">
+              <span className="inline-block font-headline text-xl font-extrabold text-foreground">
                 Cine-Spot
               </span>
             </Link>
@@ -116,7 +116,7 @@ export function Header() {
           {!user && !loading && (
              <Link href="/" className="flex items-center space-x-2">
               <CineSpotLogo className="h-8 w-8" />
-              <span className="inline-block font-headline text-xl font-extrabold text-white">
+              <span className="inline-block font-headline text-xl font-extrabold text-foreground">
                 Cine-Spot
               </span>
             </Link>

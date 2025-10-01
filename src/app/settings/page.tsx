@@ -18,6 +18,7 @@ import { useCollections } from '@/hooks/use-collections';
 import Link from 'next/link';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
 import { useAuth } from '@/hooks/use-auth';
+import { changelogData } from '@/lib/changelog.data';
 
 
 export default function SettingsPage() {
@@ -96,7 +97,7 @@ export default function SettingsPage() {
       <main className="flex-1">
         <div className="container max-w-screen-md mx-auto space-y-12 px-4 py-10 md:px-6">
           <div className="space-y-2">
-            <h1 className="font-headline text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="font-headline text-3xl font-extrabold tracking-tight text-foreground">
               Settings
             </h1>
             <p className="text-muted-foreground">
@@ -167,7 +168,7 @@ export default function SettingsPage() {
           </Card>
 
         </div>
-         <p className="text-xs text-muted-foreground text-center pb-8">App Version: 1.0.0</p>
+         <p className="text-xs text-muted-foreground text-center pb-8">App Version: {changelogData.version}</p>
       </main>
     </div>
   );

@@ -16,7 +16,7 @@ function generateId() {
 interface CollectionContextType {
   collections: Collection[];
   isLoading: boolean;
-  createCollection: (data: { name: string; description?: string; coverImageUrl?: string }) => Promise<void>;
+  createCollection: (data: { name: string; description?: string; coverImageUrl?: string }) => Promise<string | undefined>;
   updateCollection: (collectionId: string, data: Partial<Omit<Collection, 'id'>>) => Promise<void>;
   deleteCollection: (collectionId: string) => Promise<void>;
   addMovieToCollection: (collectionId: string, movieId: number) => void;
@@ -102,6 +102,7 @@ export function CollectionProvider({ children }: { children: ReactNode }) {
           coverImageUrl: newCollection.coverImageUrl || null,
           movieIds: newCollection.movieIds,
       });
+      return newId;
     } catch (error) {
         console.error("Failed to create collection", error);
         toast({

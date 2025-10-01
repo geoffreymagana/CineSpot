@@ -16,18 +16,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCollections } from '@/hooks/use-collections';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface CreateCollectionDialogProps {
     children: React.ReactNode;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    initialName?: string;
+    onCollectionCreated?: (newCollectionId: string | undefined) => void;
 }
 
-export function CreateCollectionDialog({ children, open, onOpenChange }: CreateCollectionDialogProps) {
+export function CreateCollectionDialog({ children, open, onOpenChange, initialName = '', onCollectionCreated }: CreateCollectionDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(initialName);
   const [description, setDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const { createCollection } = useCollections();
@@ -37,25 +39,27 @@ export function CreateCollectionDialog({ children, open, onOpenChange }: CreateC
   const currentOpen = isControlled ? open : internalOpen;
   const setCurrentOpen = isControlled ? onOpenChange : setInternalOpen;
 
-
   const handleCreate = async () => {
-    if (name.trim().length < 3) {
+    if (name.trim().length < 2) {
       toast({
         variant: 'destructive',
         title: 'Invalid Name',
-        description: 'Collection name must be at least 3 characters long.',
+        description: 'Collection name must be at least 2 characters long.',
       });
       return;
     }
     
     setIsCreating(true);
     try {
-        await createCollection({name, description});
+        const newCollectionId = await createCollection({name, description});
         toast({
           title: 'Collection Created',
           description: `"${name}" has been created successfully.`,
         });
         setCurrentOpen(false);
+        if (onCollectionCreated) {
+          onCollectionCreated(newCollectionId);
+        }
     } catch (error) {
         console.error("Failed to create collection", error);
         toast({
@@ -69,11 +73,11 @@ export function CreateCollectionDialog({ children, open, onOpenChange }: CreateC
   };
 
   useEffect(() => {
-    if (!currentOpen) {
-      setName('');
+    if (currentOpen) {
+      setName(initialName);
       setDescription('');
     }
-  }, [currentOpen]);
+  }, [currentOpen, initialName]);
 
   return (
     <Dialog open={currentOpen} onOpenChange={setCurrentOpen}>
@@ -108,7 +112,6 @@ export function CreateCollectionDialog({ children, open, onOpenChange }: CreateC
               placeholder="A short description for your collection..."
             />
           </div>
-       {/* Removed cover upload UI: cover images are not supported in this build; Dicebear PNG fallback will be used */}
         </div>
         <DialogFooter>
           <DialogClose asChild>

@@ -41,28 +41,7 @@ export function MovieProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onSnapshot(moviesRef, 
         (querySnapshot) => {
             let moviesData = querySnapshot.docs.map(doc => ({ id: Number(doc.id), ...doc.data() } as Movie));
-
-            // Sort: prefer not-completed items first (most recently added at top),
-            // then completed items at the bottom. Use `addedAt` if available, fallback to release_date.
-            const withAddedAt = moviesData.map(m => ({
-              ...m,
-              _addedAt: (() => {
-                const a = (m as any).addedAt;
-                if (!a) return m.release_date ? new Date(m.release_date).getTime() : 0;
-                try {
-                  return typeof a.toMillis === 'function' ? a.toMillis() : new Date(a).getTime();
-                } catch (e) {
-                  return new Date(String(a)).getTime();
-                }
-              })(),
-            }));
-
-            const notCompleted = withAddedAt.filter(m => m.watchStatus !== 'Completed').sort((a,b) => (b._addedAt || 0) - (a._addedAt || 0));
-            const completed = withAddedAt.filter(m => m.watchStatus === 'Completed').sort((a,b) => (b._addedAt || 0) - (a._addedAt || 0));
-
-            const sorted = [...notCompleted, ...completed].map(({_addedAt, ...rest}) => rest as Movie);
-
-            setMovies(sorted);
+            setMovies(moviesData);
             setIsLoading(false);
         }, 
         (error) => {
